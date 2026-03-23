@@ -57,11 +57,12 @@ public:
     bool isConnected() const { return staConnected; }
     const std::string& getCurrentSSID() const { return currentSSID; }
     std::string getLastAttemptedSsid() const;
-   int getLastErrorReason() const { return lastErrorReason; }
+    int getLastErrorReason() const { return lastErrorReason; }
 
     static void wifiEventHandler(void* arg, esp_event_base_t base, int32_t id, void* data);
     static void ipEventHandler(void* arg, esp_event_base_t base, int32_t id, void* data);
     bool scan(std::vector<ScanResult>& out);
+    void onCredentialsChanged();
 
 private:
     void handleWifiEvent(esp_event_base_t base, int32_t id, void* data);

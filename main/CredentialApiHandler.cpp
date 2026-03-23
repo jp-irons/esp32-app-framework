@@ -76,7 +76,9 @@ esp_err_t CredentialApiHandler::handleClear(httpd_req_t* req) {
 
     httpd_resp_set_type(req, "application/json");
     const char* msg = "{\"status\":\"ok\"}";
-    return httpd_resp_send(req, msg, strlen(msg));
+    esp_err_t err = httpd_resp_send(req, msg, strlen(msg));
+    ctx.wifiManager->onCredentialsChanged();
+    return err;
 }
 
 // ---------------------------------------------------------
@@ -99,7 +101,9 @@ esp_err_t CredentialApiHandler::handleDelete(httpd_req_t* req) {
 
     httpd_resp_set_type(req, "application/json");
     const char* msg = "{\"status\":\"ok\"}";
-    return httpd_resp_send(req, msg, strlen(msg));
+    esp_err_t err = httpd_resp_send(req, msg, strlen(msg));
+    ctx.wifiManager->onCredentialsChanged();
+    return err;
 }
 
 esp_err_t CredentialApiHandler::handleSubmit(httpd_req_t* req) {
@@ -187,7 +191,9 @@ esp_err_t CredentialApiHandler::handleSubmit(httpd_req_t* req) {
     }
 
     httpd_resp_set_type(req, "application/json");
-    return httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
+    esp_err_t err = httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
+    ctx.wifiManager->onCredentialsChanged();
+    return err;
 }
 
 // ---------------------------------------------------------

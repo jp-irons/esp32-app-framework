@@ -6,8 +6,9 @@ static const char* TAG = "ProvisioningServer";
 ProvisioningServer::ProvisioningServer(ApplicationContext& ctx)
     : ctx(ctx)
 {
-    credentialApi = std::make_unique<CredentialApiHandler>(ctx);
-    wifiApi = std::make_unique<WiFiApiHandler>(ctx);
+    credentialApi    = std::make_unique<CredentialApiHandler>(ctx);
+    wifiApi          = std::make_unique<WiFiApiHandler>(ctx);
+    provisioningApi  = std::make_unique<ProvisioningApiHandler>(ctx);
 }
 
 esp_err_t ProvisioningServer::start() {
@@ -85,13 +86,16 @@ esp_err_t ProvisioningServer::dispatchApi(httpd_req_t* req) {
     auto* self = static_cast<ProvisioningServer*>(req->user_ctx);
     std::string path = req->uri;
 
-    ESP_LOGI(TAG, "API request: %s", path.c_str());
+    ESP_LOGI(TAG, "dispatchApi: %s", path.c_str());
 
     if (self->credentialApi->handles(path))
         return self->credentialApi->handle(req);
 
     if (self->wifiApi->handles(path))
         return self->wifiApi->handle(req);
+
+    if (self->provisioningApi->handles(path))
+        return self->provisioningApi->handle(req);
 
     return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown API endpoint");
 }

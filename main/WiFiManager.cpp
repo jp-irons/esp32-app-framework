@@ -67,6 +67,10 @@ void WiFiManager::setEntries(const std::vector<WiFiEntry>& newEntries)
 
 void WiFiManager::enterState(WiFiState newState)
 {
+    ESP_LOGI(TAG, "enterState: %s → %s",
+         stateToString(state).c_str(),
+         stateToString(newState).c_str());
+
     state = newState;
     ctx.credentialStore.saveState(state);
 
@@ -350,4 +354,23 @@ std::string WiFiManager::stateToString(WiFiState s) const {
 
 std::string WiFiManager::getLastAttemptedSsid() const {
     return lastAttemptedSsid;
+}
+
+void WiFiManager::onCredentialsChanged()
+{
+    ESP_LOGI(TAG, "Credentials changed, scheduling WiFi restart");
+
+    // Run state transition on a separate task
+    xTaskCreate(
+        [](void* arg) {
+            WiFiManager* self = static_cast<WiFiManager*>(arg);
+            self->enterState(WiFiState::UNPROVISIONED_AP);
+            vTaskDelete(nullptr);
+        },
+        "wifi_restart_task",
+        4096,
+        this,
+        5,
+        nullptr
+    );
 }

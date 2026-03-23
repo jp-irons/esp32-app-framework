@@ -15,35 +15,30 @@ bool ProvisioningApiHandler::handles(const std::string& path) const {
 
 esp_err_t ProvisioningApiHandler::handle(httpd_req_t* req) {
     std::string path = req->uri;
-    ESP_LOGI(TAG, "Handling API request: %s", path.c_str());
-    if (path == "/api/provision/status")
+    ESP_LOGD(TAG, "Handling API request: %s", path.c_str());
+    if (path == "/api/provision/status") {
+        ESP_LOGD(TAG, "path = /api/provision/status");
         return handleStatus(req);
+    }
 
     return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown provisioning endpoint");
 }
 
-esp_err_t ProvisioningApiHandler::handleStatus(httpd_req_t* req) {
-    auto& wifi = *ctx.wifiManager;   // ← FIXED
+esp_err_t ProvisioningApiHandler::handleStatus(httpd_req_t* req)
+{
+    static const char* msg_unknown =
+        "{\"state\":\"UNKNOWN\",\"connected\":false,\"ssid\":\"\",\"lastErrorReason\":0}";
+    static const char* msg_no_wifi =
+        "{\"state\":\"NO_WIFI\",\"connected\":false,\"ssid\":\"\",\"lastErrorReason\":0}";
+    static const char* msg_ok =
+        "{\"state\":\"OK\",\"connected\":false,\"ssid\":\"\",\"lastErrorReason\":0}";
 
-    cJSON* root = cJSON_CreateObject();
+    // *** NEW: read ctx.wifiManager, but don't log, don't deref ***
+    WiFiManager* wifi = ctx.wifiManager.get();
 
-    cJSON_AddStringToObject(root, "state",
-        wifi.stateToString(wifi.getState()).c_str());
-
-    cJSON_AddBoolToObject(root, "connected", wifi.isConnected());
-
-    cJSON_AddStringToObject(root, "ssid",
-        wifi.getLastAttemptedSsid().c_str());
-
-    cJSON_AddNumberToObject(root, "lastErrorReason",
-        wifi.getLastErrorReason());
-
-    char* json = cJSON_PrintUnformatted(root);
-    cJSON_Delete(root);
+    const char* msg =
+        (wifi == nullptr) ? msg_no_wifi : msg_ok;
 
     httpd_resp_set_type(req, "application/json");
-    esp_err_t res = httpd_resp_sendstr(req, json);
-    free(json);
-
-    return res;
+    return httpd_resp_send(req, msg, strlen(msg));
 }
