@@ -1,4 +1,5 @@
 #include "RuntimeServer.hpp"
+#include "ProvisioningApiHandler.hpp"
 #include "esp_log.h"
 
 static const char* TAG = "RuntimeServer";
@@ -92,6 +93,9 @@ esp_err_t RuntimeServer::dispatchApi(httpd_req_t* req) {
 
     if (self->wifiApi->handles(path))
         return self->wifiApi->handle(req);
+
+    if (self->provisioningApi->handles(path))
+        return self->provisioningApi->handle(req);
 
     return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Unknown API endpoint");
 }

@@ -7,6 +7,7 @@
 // forward declarations
 class CredentialApiHandler;
 class WiFiApiHandler;
+class ProvisioningApiHandler;
 esp_err_t serveEmbedded(httpd_req_t* req, const char* path);
 
 class RuntimeServer {
@@ -22,6 +23,7 @@ private:
 
     std::unique_ptr<CredentialApiHandler> credentialApi;
     std::unique_ptr<WiFiApiHandler> wifiApi;
+    std::unique_ptr<ProvisioningApiHandler> provisioningApi;
 
     static esp_err_t dispatchApi(httpd_req_t* req);
 };

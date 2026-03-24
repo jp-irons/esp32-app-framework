@@ -14,9 +14,7 @@ class ProvisioningServer;
 class RuntimeServer;
 class ApplicationContext;
 
-enum class WiFiState;
-struct WiFiEntry;
-
+namespace wifi_manager {
 
 // State machine
 enum class WiFiState {
@@ -57,12 +55,14 @@ public:
     bool isConnected() const { return staConnected; }
     const std::string& getCurrentSSID() const { return currentSSID; }
     std::string getLastAttemptedSsid() const;
-    int getLastErrorReason() const { return lastErrorReason; }
+    void onCredentialsChanged();
+    int getLastErrorReason() const {
+        return lastErrorReason;
+    }
 
     static void wifiEventHandler(void* arg, esp_event_base_t base, int32_t id, void* data);
     static void ipEventHandler(void* arg, esp_event_base_t base, int32_t id, void* data);
     bool scan(std::vector<ScanResult>& out);
-    void onCredentialsChanged();
 
 private:
     void handleWifiEvent(esp_event_base_t base, int32_t id, void* data);
@@ -84,7 +84,6 @@ private:
     void stopConnectTimer();
     static void connectTimeoutCallback(void* arg);
 
-private:
     ApplicationContext& ctx;
 
     WiFiState state = WiFiState::UNPROVISIONED_AP;
@@ -102,3 +101,5 @@ private:
 
     esp_timer_handle_t connectTimer = nullptr;
 };
+
+}

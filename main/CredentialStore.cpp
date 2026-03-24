@@ -26,7 +26,7 @@ bool CredentialStore::begin()
     return true;
 }
 
-bool CredentialStore::saveEntries(const std::vector<WiFiEntry>& entries)
+bool CredentialStore::saveEntries(const std::vector<wifi_manager::WiFiEntry>& entries)
 {
     std::vector<uint8_t> encoded;
     if (!encodeEntries(entries, encoded)) {
@@ -44,7 +44,7 @@ bool CredentialStore::saveEntries(const std::vector<WiFiEntry>& entries)
     return true;
 }
 
-bool CredentialStore::loadEntries(std::vector<WiFiEntry>& outEntries)
+bool CredentialStore::loadEntries(std::vector<wifi_manager::WiFiEntry>& outEntries)
 {
     size_t size = 0;
     esp_err_t err = nvs_get_blob(handle, "entries", nullptr, &size);
@@ -67,7 +67,7 @@ bool CredentialStore::loadEntries(std::vector<WiFiEntry>& outEntries)
     return decodeEntries(buf.data(), size, outEntries);
 }
 
-bool CredentialStore::saveState(WiFiState state)
+bool CredentialStore::saveState(wifi_manager::WiFiState state)
 {
     uint32_t v = static_cast<uint32_t>(state);
     esp_err_t err = nvs_set_u32(handle, "state", v);
@@ -79,7 +79,7 @@ bool CredentialStore::saveState(WiFiState state)
     return true;
 }
 
-bool CredentialStore::loadState(WiFiState& outState)
+bool CredentialStore::loadState(wifi_manager::WiFiState& outState)
 {
     uint32_t v = 0;
     esp_err_t err = nvs_get_u32(handle, "state", &v);
@@ -92,17 +92,17 @@ bool CredentialStore::loadState(WiFiState& outState)
         return false;
     }
 
-    outState = static_cast<WiFiState>(v);
+    outState = static_cast<wifi_manager::WiFiState>(v);
     return true;
 }
 
 bool CredentialStore::clearAll() {
-    std::vector<WiFiEntry> empty;
+    std::vector<wifi_manager::WiFiEntry> empty;
     return saveEntries(empty);
 }
 
 bool CredentialStore::erase(const std::string& ssid) {
-    std::vector<WiFiEntry> entries;
+    std::vector<wifi_manager::WiFiEntry> entries;
 
     // Load current entries
     if (!loadEntries(entries)) {
@@ -113,7 +113,7 @@ bool CredentialStore::erase(const std::string& ssid) {
     auto before = entries.size();
     entries.erase(
         std::remove_if(entries.begin(), entries.end(),
-                       [&](const WiFiEntry& e) { return e.ssid == ssid; }),
+                       [&](const wifi_manager::WiFiEntry& e) { return e.ssid == ssid; }),
         entries.end()
     );
 
@@ -126,7 +126,7 @@ bool CredentialStore::erase(const std::string& ssid) {
     return saveEntries(entries);
 }
 
-bool CredentialStore::encodeEntries(const std::vector<WiFiEntry>& entries,
+bool CredentialStore::encodeEntries(const std::vector<wifi_manager::WiFiEntry>& entries,
                                     std::vector<uint8_t>& out)
 {
     // Format:
@@ -174,7 +174,7 @@ bool CredentialStore::encodeEntries(const std::vector<WiFiEntry>& entries,
 }
 
 bool CredentialStore::decodeEntries(const uint8_t* data, size_t len,
-                                    std::vector<WiFiEntry>& out)
+                                    std::vector<wifi_manager::WiFiEntry>& out)
 {
     const uint8_t* p = data;
     const uint8_t* end = data + len;
@@ -190,7 +190,7 @@ bool CredentialStore::decodeEntries(const uint8_t* data, size_t len,
     for (int i = 0; i < count; i++) {
         if (p >= end) return false;
 
-        WiFiEntry e;
+        wifi_manager::WiFiEntry e;
 
         uint8_t ssidLen = *p++;
         if (p + ssidLen > end) return false;

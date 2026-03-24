@@ -2,7 +2,6 @@ idf_component_register(
     SRCS
         app_main.cpp
         ApplicationContext.cpp
-        WiFiManager.cpp
         WiFiApiHandler.cpp
         ProvisioningServer.cpp
         ProvisioningApiHandler.cpp
@@ -13,6 +12,8 @@ idf_component_register(
         EmbeddedFilesRegister.cpp
         serveEmbedded.cpp
 
+    REQUIRES wifi_manager json
+    
     INCLUDE_DIRS
         .
 

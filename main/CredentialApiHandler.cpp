@@ -1,4 +1,6 @@
 #include "CredentialApiHandler.hpp"
+#include "WiFiManager.hpp"
+#include "ApplicationContext.hpp"
 #include "esp_log.h"
 #include <sstream>
 #include <cJSON.h>
@@ -41,7 +43,7 @@ esp_err_t CredentialApiHandler::handle(httpd_req_t* req) {
 // /api/credentials/list
 // ---------------------------------------------------------
 esp_err_t CredentialApiHandler::handleList(httpd_req_t* req) {
-    std::vector<WiFiEntry> entries;
+    std::vector<wifi_manager::WiFiEntry> entries;
 
     ctx.credentialStore.loadEntries(entries);   // <-- correct API usage
 
@@ -77,7 +79,7 @@ esp_err_t CredentialApiHandler::handleClear(httpd_req_t* req) {
     httpd_resp_set_type(req, "application/json");
     const char* msg = "{\"status\":\"ok\"}";
     esp_err_t err = httpd_resp_send(req, msg, strlen(msg));
-    ctx.wifiManager->onCredentialsChanged();
+    // ctx.wifiManager->onCredentialsChanged();
     return err;
 }
 
@@ -130,7 +132,7 @@ esp_err_t CredentialApiHandler::handleSubmit(httpd_req_t* req) {
         return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing ssid");
     }
 
-    WiFiEntry entry;
+    wifi_manager::WiFiEntry entry;
     entry.ssid = ssid->valuestring;
 
     // Optional: password
@@ -168,7 +170,7 @@ esp_err_t CredentialApiHandler::handleSubmit(httpd_req_t* req) {
     }
 
     // Load → modify/replace → save
-    std::vector<WiFiEntry> entries;
+    std::vector<wifi_manager::WiFiEntry> entries;
     ctx.credentialStore.loadEntries(entries);
 
     bool replaced = false;
@@ -192,7 +194,7 @@ esp_err_t CredentialApiHandler::handleSubmit(httpd_req_t* req) {
 
     httpd_resp_set_type(req, "application/json");
     esp_err_t err = httpd_resp_sendstr(req, "{\"status\":\"ok\"}");
-    ctx.wifiManager->onCredentialsChanged();
+    // ctx.wifiManager->onCredentialsChanged();
     return err;
 }
 

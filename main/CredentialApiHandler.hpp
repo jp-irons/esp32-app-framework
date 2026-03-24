@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 #include "esp_http_server.h"
-#include "ApplicationContext.hpp"
 
+class ApplicationContext; 
 class CredentialApiHandler {
 public:
     explicit CredentialApiHandler(ApplicationContext& ctx);

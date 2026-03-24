@@ -1,6 +1,10 @@
 #include "ProvisioningApiHandler.hpp"
+#include "WiFiManager.hpp"
+#include "ApplicationContext.hpp"
 #include "cJSON.h"
 #include "esp_log.h"
+
+using wifi_manager::WiFiManager;
 
 static const char* TAG = "ProvisioningApiHandler";
 

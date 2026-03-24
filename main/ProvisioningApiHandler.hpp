@@ -1,8 +1,10 @@
 #pragma once
 
 #include "esp_http_server.h"
-#include "ApplicationContext.hpp"
 #include <string>
+
+class ApplicationContext; 
+class WifiManager;
 
 class ProvisioningApiHandler {
 public:
