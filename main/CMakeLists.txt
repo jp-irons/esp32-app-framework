@@ -12,7 +12,7 @@ idf_component_register(
         EmbeddedFilesRegister.cpp
         serveEmbedded.cpp
 
-    REQUIRES wifi_manager json
+    REQUIRES wifi_manager cjson
     
     INCLUDE_DIRS
         .
