@@ -2,9 +2,10 @@
 
 namespace wifi_manager {
 
-RuntimeServer::RuntimeServer(WiFiContext& ctx)
-    : ctx(ctx)
+RuntimeServer::RuntimeServer(WiFiContext* ctx)
+	    : ctx(ctx)
 {
+	    // No work here — constructor is intentionally minimal.
 }
 
 void RuntimeServer::start() {

@@ -2,6 +2,7 @@
 #include "esp_log.h"
 #include <cstring>
 #include <algorithm>
+#include "nvs.h"
 
 namespace credential_store {
 
@@ -12,7 +13,7 @@ CredentialStore::CredentialStore(const char* nvsNamespace)
 {
 }
 
-bool CredentialStore::loadAll(std::vector<WifiCredential>& out) {
+bool CredentialStore::loadAll(std::vector<WiFiCredential>& out) {
     nvs_handle_t handle;
     esp_err_t err = nvs_open(ns, NVS_READONLY, &handle);
     if (err != ESP_OK) {
@@ -46,7 +47,7 @@ bool CredentialStore::loadAll(std::vector<WifiCredential>& out) {
 
         if (p + ssidLen + passLen > end) break;
 
-        WifiCredential c;
+        WiFiCredential c;
         c.ssid.assign((const char*)p, ssidLen);
         p += ssidLen;
 
@@ -61,7 +62,7 @@ bool CredentialStore::loadAll(std::vector<WifiCredential>& out) {
     return true;
 }
 
-bool CredentialStore::saveAll(const std::vector<WifiCredential>& entries) {
+bool CredentialStore::saveAll(const std::vector<WiFiCredential>& entries) {
     // Compute size
     size_t size = 0;
     for (auto& e : entries) {
@@ -96,8 +97,8 @@ bool CredentialStore::saveAll(const std::vector<WifiCredential>& entries) {
     return err == ESP_OK;
 }
 
-bool CredentialStore::add(const WifiCredential& entry) {
-    std::vector<WifiCredential> entries;
+bool CredentialStore::add(const WiFiCredential& entry) {
+    std::vector<WiFiCredential> entries;
     loadAll(entries);
 
     // Replace if SSID exists
@@ -113,12 +114,12 @@ bool CredentialStore::add(const WifiCredential& entry) {
 }
 
 bool CredentialStore::erase(const std::string& ssid) {
-    std::vector<WifiCredential> entries;
+    std::vector<WiFiCredential> entries;
     loadAll(entries);
 
     entries.erase(
         std::remove_if(entries.begin(), entries.end(),
-                       [&](const WifiCredential& e) { return e.ssid == ssid; }),
+                       [&](const WiFiCredential& e) { return e.ssid == ssid; }),
         entries.end()
     );
 

@@ -1,33 +1,47 @@
 #pragma once
 
 #include "WiFiContext.hpp"
+#include "esp_event_base.h"
+
 
 namespace wifi_manager {
 
 class WiFiManager {
 public:
-    explicit WiFiManager(WiFiContext& ctx);
+    explicit WiFiManager(WiFiContext* ctx);
 
-    void startProvisioning();
-    void onProvisioningComplete();
-    void onProvisioningFailed();
+    void start();
+    void tick();
 
-    void onSTAConnected();
-    void onSTADisconnected();
+    WiFiState state() const { return ctx->state; }
 
-    void loop();
+	void loop(); // no logic to go in loop. Heartbeat, watchdog etc. ok
 
 private:
-    WiFiContext& ctx;
-	WiFiState state;
+    WiFiContext* ctx;
 
-    void transitionTo(WiFiState newState);
-	
-	void connectSTAWithStoredCredentials();
+    // The authoritative state transition function
+    void transitionTo(WiFiState s);
+
+	void handleUnprovisionedAP();
+	void handleProvisioningStaTest();
+	void handleProvisioningFailed();
+	void handleRuntimeSta();
+	void tryNextCredential();
+
+    // WiFi event handlers
+    static void wifiEventHandler(void* arg,
+                                 esp_event_base_t base,
+                                 int32_t id,
+                                 void* data);
+
+    static void ipEventHandler(void* arg,
+                               esp_event_base_t base,
+                               int32_t id,
+                               void* data);
 
 };
 
-// Factory
 WiFiManager* create(WiFiContext& ctx);
 
 } // namespace wifi_manager

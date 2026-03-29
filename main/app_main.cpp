@@ -39,7 +39,7 @@ extern "C" void app_main(void)
     static ApplicationContext app;
 
     // Start WiFi provisioning (or runtime later)
-    app.wifiManager->startProvisioning();
+    app.wifiManager->start();
 
     ESP_LOGI("app_main", "System initialised");
 

@@ -1,7 +1,11 @@
 #pragma once
 
-#include "WiFiState.hpp"   // Needed because WiFiContext stores a ProvisioningState
 #include "CredentialStore.hpp"
+#include "WiFiState.hpp"   // Needed because WiFiContext stores a ProvisioningState
+
+namespace credential_store {
+    class CredentialStore;   // ← forward declare instead of include
+}
 
 
 namespace wifi_manager {
@@ -21,6 +25,10 @@ struct WiFiContext {
     RuntimeServer* runtime = nullptr;
 
     credential_store::CredentialStore* creds = nullptr;
+	
+	std::vector<credential_store::WiFiCredential> loadedCreds;
+	size_t currentCredIndex = 0;
+
 };
 
 
