@@ -8,8 +8,6 @@ namespace http {
     class HttpResponse;
 }
 
-using namespace http;
-
 namespace core_api {
 
 class CredentialApiHandler {
@@ -17,13 +15,13 @@ public:
     CredentialApiHandler(CredentialStore& store,
                          ProvisioningStateMachine& provisioning);
 
-    bool handle(const HttpRequest& req, HttpResponse& res);
+    bool handle(const http::HttpRequest& req, http::HttpResponse& res);
 
 private:
-    void handleList(HttpResponse& res);
-    void handleSubmit(const HttpRequest& req, HttpResponse& res);
-    void handleDelete(const HttpRequest& req, HttpResponse& res);
-    void handleClear(HttpResponse& res);
+    void handleList(http::HttpResponse& res);
+    void handleSubmit(const http::HttpRequest& req, http::HttpResponse& res);
+    void handleDelete(const http::HttpRequest& req, http::HttpResponse& res);
+    void handleClear(http::HttpResponse& res);
 
     CredentialStore& store;
     ProvisioningStateMachine& provisioning;

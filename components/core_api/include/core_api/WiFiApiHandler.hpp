@@ -9,25 +9,21 @@ namespace wifi_manager {
 	class WiFiManager;
 }
 
-using namespace http;
-using namespace wifi_manager;
-
-
 namespace core_api {
 
 class WiFiApiHandler {
 public:
-    explicit WiFiApiHandler(WiFiManager& wifi);
+    explicit WiFiApiHandler(wifi_manager::WiFiManager& wifi);
 
-    bool handle(const HttpRequest& req, HttpResponse& res);
+    bool handle(const http::HttpRequest& req, http::HttpResponse& res);
 
 private:
-    void handleScan(HttpResponse& res);
-    void handleStatus(HttpResponse& res);
-    void handleConnect(const HttpRequest& req, HttpResponse& res);
-    void handleDisconnect(HttpResponse& res);
+    void handleScan(http::HttpResponse& res);
+    void handleStatus(http::HttpResponse& res);
+    void handleConnect(const http::HttpRequest& req, http::HttpResponse& res);
+    void handleDisconnect(http::HttpResponse& res);
 
-    WiFiManager& wifi;
+    wifi_manager::WiFiManager& wifi;
 };
 
 } // namespace core_api

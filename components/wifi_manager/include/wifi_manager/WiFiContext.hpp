@@ -7,7 +7,6 @@ namespace credential_store {
     class CredentialStore;   // ← forward declare instead of include
 }
 
-
 namespace wifi_manager {
 
 // Forward declarations

@@ -7,21 +7,18 @@ namespace http {
     class HttpResponse;
 }
 
-using namespace http;
-
-
 namespace core_api {
 
 class ProvisioningApiHandler {
 public:
     explicit ProvisioningApiHandler(ProvisioningStateMachine& provisioning);
 
-    bool handle(const HttpRequest& req, HttpResponse& res);
+    bool handle(const http::HttpRequest& req, http::HttpResponse& res);
 
 private:
-    void handleStatus(HttpResponse& res);
-    void handleStart(HttpResponse& res);
-    void handleComplete(HttpResponse& res);
+    void handleStatus(http::HttpResponse& res);
+    void handleStart(http::HttpResponse& res);
+    void handleComplete(http::HttpResponse& res);
 
     ProvisioningStateMachine& provisioning;
 };
