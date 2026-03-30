@@ -5,11 +5,13 @@
 #include "wifi_manager/ProvisioningStateMachine.hpp"
 
 using namespace http;
+using namespace credential_store;
+using namespace wifi_manager;
 
 namespace core_api {
 
-CredentialApiHandler::CredentialApiHandler(CredentialStore& s,
-                                           ProvisioningStateMachine& p)
+CredentialApiHandler::CredentialApiHandler(credential_store::CredentialStore& s,
+                                           wifi_manager::ProvisioningStateMachine& p)
     : store(s), provisioning(p)
 {
 }

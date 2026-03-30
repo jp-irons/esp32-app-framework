@@ -6,7 +6,7 @@ using namespace http;
 
 namespace core_api {
 
-ProvisioningApiHandler::ProvisioningApiHandler(ProvisioningStateMachine& p)
+ProvisioningApiHandler::ProvisioningApiHandler(wifi_manager::ProvisioningStateMachine& p)
     : provisioning(p)
 {
 }

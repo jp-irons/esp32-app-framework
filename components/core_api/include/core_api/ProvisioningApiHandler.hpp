@@ -1,5 +1,6 @@
 #pragma once
 
+#include "wifi_manager/ProvisioningStateMachine.hpp"
 class ProvisioningStateMachine;
 
 namespace http {
@@ -11,7 +12,7 @@ namespace core_api {
 
 class ProvisioningApiHandler {
 public:
-    explicit ProvisioningApiHandler(ProvisioningStateMachine& provisioning);
+    explicit ProvisioningApiHandler(wifi_manager::ProvisioningStateMachine& provisioning);
 
     bool handle(const http::HttpRequest& req, http::HttpResponse& res);
 
@@ -20,7 +21,7 @@ private:
     void handleStart(http::HttpResponse& res);
     void handleComplete(http::HttpResponse& res);
 
-    ProvisioningStateMachine& provisioning;
+    wifi_manager::ProvisioningStateMachine& provisioning;
 };
 
 } // namespace core_api

@@ -9,7 +9,7 @@ using namespace wifi_manager;
 
 namespace core_api {
 
-WiFiApiHandler::WiFiApiHandler(WiFiManager& w)
+WiFiApiHandler::WiFiApiHandler(wifi_manager::WiFiManager& w)
     : wifi(w)
 {
 }

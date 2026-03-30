@@ -2,7 +2,8 @@ idf_component_register(
     SRCS
         app_main.cpp
         ApplicationContext.cpp
-    REQUIRES wifi_manager credential_store cjson
+    REQUIRES
+    	framework 
     INCLUDE_DIRS
         .
    EMBED_FILES

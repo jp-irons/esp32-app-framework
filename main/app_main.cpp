@@ -45,13 +45,13 @@ extern "C" void app_main(void)
     static ApplicationContext app;
 
     // Start WiFi provisioning (or runtime later)
-    app.wifiManager->start();
+    app.start();
 
     ESP_LOGI(TAG, "System initialised");
 
     // Main loop
     while (true) {
-        app.wifiManager->loop();
+        app.loop();
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
