@@ -150,9 +150,11 @@ void WiFiManager::handleWiFiEvent(esp_event_base_t base,
             break;
         }
 
-        case WIFI_EVENT_AP_START:
-            ESP_LOGI(TAG, "AP started");
-            break;
+		case WIFI_EVENT_AP_START:
+		    ESP_LOGI(TAG, "AP started");
+		    // Optional: notify state machine that AP is ready
+//		    provisioningStateMachine->onApStarted();
+		    break;
 
         default:
             break;
