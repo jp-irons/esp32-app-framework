@@ -60,11 +60,11 @@ enum class WiFiError {
     UNKNOWN
 };
 
-std::string toString(WiFiState state);
+const char* toString(WiFiState state);
 
-std::string toString(WiFiError err);
+const char* toString(WiFiError err);
 
-WiFiError translateReason(uint8_t reason);
+WiFiError toWiFiError(uint8_t reason);
 
 
 } // namespace wifi_manager

@@ -16,7 +16,7 @@ enum class WiFiState;
 struct WiFiContext {
     ProvisioningServer* provisioningServer = nullptr;
     RuntimeServer* runtimeServer = nullptr;
-    credential_store::CredentialStore* creds = nullptr;
+    credential_store::CredentialStore* credentialStore = nullptr;
 
     WiFiInterface* wifiInterface = nullptr;
     WiFiStateMachine* stateMachine = nullptr;

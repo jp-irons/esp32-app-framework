@@ -18,7 +18,7 @@ FrameworkContext::FrameworkContext() {
     //
     // 1. Wire WiFiContext (static pointers only)
     //
-    wifiCtx.creds = &credentialStore;
+    wifiCtx.credentialStore = &credentialStore;
 
     //
     // 2. Create servers (AP + Runtime HTTP)

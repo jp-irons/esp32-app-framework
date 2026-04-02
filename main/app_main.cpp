@@ -31,10 +31,10 @@ extern "C" void app_main(void)
     esp_log_level_set("WiFiApiHandler", ESP_LOG_DEBUG);
 
 	// 1. Initialize NVS
-	ESP_LOGD(TAG, "about to call nvs_flash_init");
+	ESP_LOGD(TAG, "nvs_flash_init");
 	esp_err_t ret = nvs_flash_init();
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-		ESP_LOGD(TAG, "flash erase then init");
+		ESP_LOGE(TAG, "flash erase then init");
 	    ESP_ERROR_CHECK(nvs_flash_erase());
 	    ESP_ERROR_CHECK(nvs_flash_init());
 	}

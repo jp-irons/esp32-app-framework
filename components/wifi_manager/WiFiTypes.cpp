@@ -3,7 +3,7 @@
 
 namespace wifi_manager {
 
-std::string toString(WiFiState state) {
+const char* toString(WiFiState state) {
     switch (state) {
         case WiFiState::UNINITIALISED:
             return "UNINITIALISED";
@@ -44,7 +44,7 @@ std::string toString(WiFiState state) {
     return "UNKNOWN";
 }
 
-std::string toString(WiFiError err) {
+const char* toString(WiFiError err) {
     switch (err) {
         case WiFiError::NONE:
             return "NONE";
@@ -78,10 +78,10 @@ std::string toString(WiFiError err) {
 }
 
 std::string toString(uint8_t reason){
-	return toString(translateReason(reason));
+	return toString(toWiFiError(reason));
 }
 
-WiFiError translateReason(uint8_t reason)
+WiFiError toWiFiError(uint8_t reason)
 {
     switch (reason) {
 
