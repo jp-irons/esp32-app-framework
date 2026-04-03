@@ -15,10 +15,6 @@ class ApplicationContext {
 
   private:
     wifi_manager::ApConfig apConfig = {
-		.ssid = "ESP32 FW Test", 
-		.password = "esp32", 
-		.channel = 1, 
-		.maxConnections = 4
-	};
+        .ssid = "ESP32 FW Test", .password = "password", .channel = 1, .maxConnections = 4};
     framework::FrameworkContext framework;
 };

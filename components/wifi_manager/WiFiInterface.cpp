@@ -24,8 +24,13 @@ WiFiInterface::WiFiInterface(WiFiContext &ctx)
  * Those belong in app_main().
  */
 void WiFiInterface::startDriver() {
-    ESP_LOGI(TAG, "Initialising WiFi driver");
+    ESP_LOGI(TAG, "startDriver");
 
+    // 1. Create default netifs
+    apNetif = esp_netif_create_default_wifi_ap();
+    staNetif = esp_netif_create_default_wifi_sta();
+
+    // 2. Initialize Wi-Fi driver
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
@@ -65,25 +70,22 @@ void WiFiInterface::startAp(const ApConfig &config) {
         useOpenAp = true;
     }
 
-	if (useOpenAp) {
-	    ap_cfg.ap.authmode = WIFI_AUTH_OPEN;
-	    ap_cfg.ap.password[0] = '\0';  // ensure empty
-	} else {
-	    ap_cfg.ap.authmode = WIFI_AUTH_WPA2_PSK;
-	    strncpy((char*)ap_cfg.ap.password, config.password.c_str(), sizeof(ap_cfg.ap.password));
-	}
+    if (useOpenAp) {
+        ap_cfg.ap.authmode = WIFI_AUTH_OPEN;
+        ap_cfg.ap.password[0] = '\0'; // ensure empty
+    } else {
+        ap_cfg.ap.authmode = WIFI_AUTH_WPA2_PSK;
+        strncpy((char *) ap_cfg.ap.password, config.password.c_str(), sizeof(ap_cfg.ap.password));
+    }
 
-	ap_cfg.ap.channel = config.channel;
-	ap_cfg.ap.max_connection = config.maxConnections;
+    ap_cfg.ap.channel = config.channel;
+    ap_cfg.ap.max_connection = config.maxConnections;
 
-	ESP_LOGI(TAG, "Starting SoftAP: %s (authmode=%s)",
-	    config.ssid.c_str(),
-	    useOpenAp ? "OPEN" : "WPA2"
-	);
+    ESP_LOGI(TAG, "Starting SoftAP: %s (authmode=%s)", config.ssid.c_str(), useOpenAp ? "OPEN" : "WPA2");
 
-	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
-	ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
+    ESP_ERROR_CHECK(esp_wifi_start());
 }
 
 void WiFiInterface::stopAp() {

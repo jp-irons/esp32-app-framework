@@ -15,16 +15,15 @@ class RuntimeServer;
 enum class WiFiState;
 
 struct WiFiContext {
-    ProvisioningServer* provisioningServer = nullptr;
-    RuntimeServer* runtimeServer = nullptr;
-    credential_store::CredentialStore* credentialStore = nullptr;
+    ProvisioningServer *provisioningServer = nullptr;
+    RuntimeServer *runtimeServer = nullptr;
+    credential_store::CredentialStore *credentialStore = nullptr;
 
-    WiFiInterface* wifiInterface = nullptr;
-    WiFiStateMachine* stateMachine = nullptr;
-	
-	ApConfig apConfig;
-	StaConfig testStaConfig;
-	StaConfig currentStaConfig;
+    WiFiInterface *wifiInterface = nullptr;
+    WiFiStateMachine *stateMachine = nullptr;
+
+    ApConfig apConfig;
+    StaConfig currentStaConfig;
 };
 
 } // namespace wifi_manager
