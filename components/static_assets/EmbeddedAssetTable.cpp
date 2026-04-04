@@ -1,5 +1,7 @@
 #include "static_assets/EmbeddedAssetTable.hpp"
 
+#include "esp_log.h"
+
 #include <cstring>
 
 extern const uint8_t _binary_index_html_start[] asm("_binary_index_html_start");
@@ -16,6 +18,7 @@ using namespace static_assets;
 namespace static_assets {
 
 static const char *TAG = "EmbeddedAssetTable";
+
 struct AssetEntry {
     const char *path;
     const uint8_t *start;
@@ -29,6 +32,7 @@ static const AssetEntry assets[] = {
 };
 
 const uint8_t *EmbeddedAssetTable::find(const char *path, size_t &outSize) {
+	ESP_LOGD(TAG, "find");
     for (auto &a : assets) {
         if (strcmp(a.path, path) == 0) {
             outSize = a.end - a.start;
