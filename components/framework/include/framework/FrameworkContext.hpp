@@ -17,6 +17,7 @@ namespace framework {
 class FrameworkContext {
   public:
     FrameworkContext(const wifi_manager::ApConfig &provisioningApConfig);
+    ~FrameworkContext();
 
     credential_store::CredentialStore &getCredentialStore() const;
     core_api::CredentialApiHandler &getCredentialApi() const;
@@ -26,7 +27,6 @@ class FrameworkContext {
     wifi_manager::ProvisioningServer &getProvisioningServer() const;
     wifi_manager::RuntimeServer &getRuntimeServer() const;
 
-    ~FrameworkContext();
 
     void start();
     void stop();

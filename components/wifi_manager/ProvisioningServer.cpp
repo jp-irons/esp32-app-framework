@@ -1,6 +1,7 @@
 #include "wifi_manager/ProvisioningServer.hpp"
 
 #include "esp_log.h"
+#include "static_assets/StaticFileRouter.hpp"
 
 #include <string>
 
@@ -12,6 +13,11 @@ ProvisioningServer::ProvisioningServer(WiFiContext &ctx)
     : ctx(ctx)
     , server(nullptr) {
     ESP_LOGD(TAG, "constructor");
+	fileRouter = new static_assets::StaticFileRouter("/provision");
+}
+
+ProvisioningServer::~ProvisioningServer() {
+	delete fileRouter;
 }
 
 bool ProvisioningServer::start() {
@@ -44,9 +50,12 @@ void ProvisioningServer::stop() {
 }
 
 bool ProvisioningServer::registerHandlers() {
-    httpd_uri_t api_get = {.uri = "/api/*", .method = HTTP_GET, .handler = dispatchApi, .user_ctx = this};
+    httpd_uri_t api_get = {.uri = "/api/*", 
+						   .method = HTTP_GET, 
+						   .handler = dispatchApi, 
+						   .user_ctx = this};
 
-    httpd_uri_t files = {.uri = "/*",
+    httpd_uri_t staticFiles = {.uri = "/*",
                          .method = HTTP_GET,
                          .handler = handleStaticFile,
                          //	    .handler  = [](httpd_req_t* req) {
@@ -54,9 +63,8 @@ bool ProvisioningServer::registerHandlers() {
                          //	    },
                          .user_ctx = this};
     httpd_register_uri_handler(server, &api_get);
-    httpd_register_uri_handler(server, &files);
-    //    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &files));
-
+    httpd_register_uri_handler(server, &staticFiles);
+// TODO: review ESP_ERROR_CHECK(httpd_register_uri_handler(server, &files));
     return true;
 }
 
@@ -76,13 +84,12 @@ esp_err_t ProvisioningServer::dispatchApi(httpd_req_t *req) {
     return ESP_OK;
 }
 
-// replace with serveEmbedded()
-esp_err_t ProvisioningServer::handleStaticFile(httpd_req_t *req) {
+esp_err_t ProvisioningServer::handleStaticFile(httpd_req_t *req)
+{
     ESP_LOGD(TAG, "handleStaticFile");
-    std::string json = "[ok static file]";
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, json.c_str(), json.size());
-    return ESP_OK;
+//    auto *self = fromReq(req);
+	auto *self = static_cast<ProvisioningServer*>(req->user_ctx);
+    return self->fileRouter->handle(req);
 }
 
 } // namespace wifi_manager

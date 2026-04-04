@@ -1,5 +1,6 @@
 #pragma once
 
+#include "static_assets/StaticFileRouter.hpp"
 #include "esp_http_server.h"
 
 namespace wifi_manager {
@@ -9,6 +10,7 @@ struct WiFiContext;
 class ProvisioningServer {
   public:
     explicit ProvisioningServer(WiFiContext &ctx);
+	~ProvisioningServer();
 
     // Explicit lifecycle
     bool start(); // start HTTP server
@@ -17,6 +19,8 @@ class ProvisioningServer {
   private:
     WiFiContext &ctx; // non-owning shared state
     httpd_handle_t server; // HTTP server instance
+
+	static_assets::StaticFileRouter *fileRouter;
 
     bool registerHandlers();
 

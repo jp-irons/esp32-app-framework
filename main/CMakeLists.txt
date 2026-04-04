@@ -6,9 +6,4 @@ idf_component_register(
     	framework 
     INCLUDE_DIRS
         .
-   EMBED_FILES
-        ui/favicon.ico
-        ui/provision/index.html
-        ui/provision/provision.js
-        ui/provision/tailwind.css
 )

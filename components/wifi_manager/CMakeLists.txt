@@ -16,4 +16,5 @@ idf_component_register(
         cjson
         http
         credential_store
+        static_assets
 )
