@@ -6,7 +6,8 @@ idf_component_register(
         WiFiStateMachine.cpp
         WiFiTypes.cpp
     INCLUDE_DIRS
-        "include"
+        include
+        ../static_assets/include
    REQUIRES
         esp_wifi
         esp_event
@@ -14,7 +15,11 @@ idf_component_register(
         nvs_flash
         esp_timer
         cjson
-        http
         credential_store
+        core_api        
+        wifi_manager
+        http
         static_assets
+        framework
+        
 )

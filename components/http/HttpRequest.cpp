@@ -2,15 +2,6 @@
 
 namespace http {
 
-HttpRequest::HttpRequest(httpd_req_t* r)
-    : req(r)
-{
-}
-
-const char* HttpRequest::path() const {
-    return req->uri;
-}
-
 std::string HttpRequest::body() const {
     int remaining = req->content_len;
     std::string result;

@@ -1,12 +1,16 @@
 idf_component_register(
     SRCS
-        "StaticFileRouter.cpp"
-        "EmbeddedAssetTable.cpp"
-        "ContentType.cpp"
+    	StaticFileHandler.cpp
+    	EmbeddedAssetTable.cpp
     INCLUDE_DIRS
         "include"
-     REQUIRES
-        esp_http_server
+    REQUIRES
+        credential_store
+        core_api        
+        wifi_manager
+        http
+        static_assets
+        framework
     EMBED_FILES
         assets/index.html
         assets/app.js

@@ -1,35 +1,54 @@
 #pragma once
 
-#include "static_assets/StaticFileRouter.hpp"
-#include "esp_http_server.h"
+#include "core_api/CredentialApiHandler.hpp"
+#include "core_api/WiFiApiHandler.hpp"
+#include "http/HttpHandler.hpp"
+#include "http/HttpServer.hpp"
+#include "framework/Result.hpp"
+#include "static_assets/StaticFileHandler.hpp"
+
+namespace http {
+class HttpRequest;
+class HttpResponse;
+}
 
 namespace wifi_manager {
-	
+
 struct WiFiContext;
 
-class ProvisioningServer {
-  public:
-    explicit ProvisioningServer(WiFiContext &ctx);
-	~ProvisioningServer();
+class ProvisioningServer : public http::HttpHandler {
+public:
+    explicit ProvisioningServer(WiFiContext& ctx);
+    ~ProvisioningServer();
 
-    // Explicit lifecycle
-    bool start(); // start HTTP server
-    void stop(); // stop HTTP server
+    bool start();
+    void stop();
 
-  private:
-    WiFiContext &ctx; // non-owning shared state
-    httpd_handle_t server; // HTTP server instance
+	void handle(http::HttpRequest& req, http::HttpResponse& res) override;
+	
+private:
+    // Handlers
+    framework::Result handleStaticFile(http::HttpRequest& req,
+                                http::HttpResponse& res);
 
-	static_assets::StaticFileRouter *fileRouter;
+    framework::Result handleSubmit(http::HttpRequest& req,
+                            http::HttpResponse& res);
 
-    bool registerHandlers();
+    framework::Result handleStatus(http::HttpRequest& req,
+                            http::HttpResponse& res);
 
-    // Static HTTP handlers (C-style)
-    static esp_err_t dispatchApi(httpd_req_t *req);
-    static esp_err_t handleStaticFile(httpd_req_t *req);
+    framework::Result handleScan(http::HttpRequest& req,
+                          http::HttpResponse& res);
 
-    // Helper to extract instance pointer
-    static ProvisioningServer *fromReq(httpd_req_t *req);
+private:
+    WiFiContext& ctx;
+
+    http::HttpServer server;
+	static_assets::StaticFileHandler staticHandler;
+	core_api::WiFiApiHandler wifiHandler;
+	core_api::CredentialApiHandler credentialHandler;
+
+    bool routesRegistered = false;
 };
 
 } // namespace wifi_manager

@@ -2,20 +2,32 @@
 
 #include "esp_http_server.h"
 #include <string>
+#include <string_view>
 
 namespace http {
 
+// TODO move method defns back from header to cpp
 class HttpRequest {
-public:
-    explicit HttpRequest(httpd_req_t* r);
+  public:
+    explicit HttpRequest(httpd_req *r)
+        : req(r) {}
 
-    const char* path() const;
-    std::string body() const;
+    const char *path() const {
+        return req->uri;
+    }
 
-    httpd_req_t* raw() const { return req; }
+    std::string body() const;  // keep this out-of-line
+
+    std::string_view uri() const {
+        return req->uri;
+    }
+
+    httpd_req *raw() const {
+        return req;
+    }
 
 private:
-    httpd_req_t* req;
+    httpd_req *req;
 };
 
 } // namespace http

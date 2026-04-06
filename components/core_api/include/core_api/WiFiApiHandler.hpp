@@ -6,7 +6,7 @@ namespace http {
 }
 
 namespace wifi_manager {
-	class WiFiContext;
+	struct WiFiContext;
 }
 
 namespace core_api {

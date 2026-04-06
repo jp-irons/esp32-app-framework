@@ -1,9 +1,18 @@
+
 #include "wifi_manager/ProvisioningServer.hpp"
 
 #include "esp_log.h"
-#include "static_assets/StaticFileRouter.hpp"
+#include "http/HttpRequest.hpp"
+#include "http/HttpResponse.hpp"
+//#include "static_assets/StaticFileHandler.hpp"
+#include "wifi_manager/WiFiContext.hpp"
+#include "wifi_manager/WiFiStateMachine.hpp"
 
-#include <string>
+#include "static_assets/StaticFileHandler.hpp"
+static_assert(std::is_base_of<http::HttpHandler, static_assets::StaticFileHandler>::value, "mismatch");
+static_assert(std::is_trivially_destructible<static_assets::StaticFileHandler>::value == false, "just to force instantiation");
+
+
 
 namespace wifi_manager {
 
@@ -11,85 +20,128 @@ static const char *TAG = "ProvisioningServer";
 
 ProvisioningServer::ProvisioningServer(WiFiContext &ctx)
     : ctx(ctx)
-    , server(nullptr) {
-    ESP_LOGD(TAG, "constructor");
-	fileRouter = new static_assets::StaticFileRouter("/provision");
-}
+    , server()
+    , staticHandler("/provision", "index.html")
+    , wifiHandler(ctx)
+    , credentialHandler(*ctx.credentialStore) {}
 
 ProvisioningServer::~ProvisioningServer() {
-	delete fileRouter;
+    stop();
 }
 
 bool ProvisioningServer::start() {
-    if (server) {
-        ESP_LOGW(TAG, "Provisioning server already running");
-        return true;
+    ESP_LOGI(TAG, "Starting ProvisioningServer");
+
+    server.start();
+
+    if (!routesRegistered) {
+        ESP_LOGD(TAG, "start() registering routes");
+        server.addRoute("/assets/*", &staticHandler);
+        // TODO implement handler for below
+        //		server.addRoute("/api/wifi/*", &wifiHandler);
+        //		server.addRoute("/api/credentials/*", &credentialHandler);
+
+        // TODO Remove these legacy registrations
+        //        server.registerHandler(http::HttpMethod::Get, "/provision/*", this, &ProvisioningServer::handleStaticFile);
+        //
+        //        server.registerHandler(http::HttpMethod::Post, "/provision/submit", this, &ProvisioningServer::handleSubmit);
+        //
+        //        server.registerHandler(http::HttpMethod::Get, "/provision/status", this, &ProvisioningServer::handleStatus);
+        //
+        //        server.registerHandler(http::HttpMethod::Get, "/provision/scan", this, &ProvisioningServer::handleScan);
+        //
+        routesRegistered = true;
     }
 
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.uri_match_fn = httpd_uri_match_wildcard;
-    config.server_port = 80;
-
-    ESP_LOGI(TAG, "Starting provisioning HTTP server");
-
-    if (httpd_start(&server, &config) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start provisioning server");
-        server = nullptr;
-        return false;
-    }
-
-    return registerHandlers();
-}
-
-void ProvisioningServer::stop() {
-    if (server) {
-        ESP_LOGI(TAG, "Stopping provisioning HTTP server");
-        httpd_stop(server);
-        server = nullptr;
-    }
-}
-
-bool ProvisioningServer::registerHandlers() {
-    httpd_uri_t api_get = {.uri = "/api/*", 
-						   .method = HTTP_GET, 
-						   .handler = dispatchApi, 
-						   .user_ctx = this};
-
-    httpd_uri_t staticFiles = {.uri = "/*",
-                         .method = HTTP_GET,
-                         .handler = handleStaticFile,
-                         //	    .handler  = [](httpd_req_t* req) {
-                         //	        return serveEmbedded(req, "/");   // <-- BASE PATH HERE
-                         //	    },
-                         .user_ctx = this};
-    httpd_register_uri_handler(server, &api_get);
-    httpd_register_uri_handler(server, &staticFiles);
-// TODO: review ESP_ERROR_CHECK(httpd_register_uri_handler(server, &files));
     return true;
 }
 
-ProvisioningServer *ProvisioningServer::fromReq(httpd_req_t *req) {
-    return static_cast<ProvisioningServer *>(req->user_ctx);
+void ProvisioningServer::stop() {
+    ESP_LOGI(TAG, "Stopping ProvisioningServer");
+    server.stop();
 }
 
-// -------------------------
-// Handlers
-// -------------------------
-
-esp_err_t ProvisioningServer::dispatchApi(httpd_req_t *req) {
-    ESP_LOGD(TAG, "dispatchApi");
-    std::string json = "[ok dispatchApi]";
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, json.c_str(), json.size());
-    return ESP_OK;
+// TODO remove legacy handlers
+// ------------------------------------------------------------
+// Static file handler
+// ------------------------------------------------------------
+framework::Result ProvisioningServer::handleStaticFile(http::HttpRequest &req, http::HttpResponse &res) {
+    ESP_LOGD(TAG, "handleStaticFile not implemented");
+    //    auto file = staticRouter.serve(req.path());
+    //
+    //    if (!file.found) {
+    //        return framework::Result::NotFound;
+    //    }
+    //    //    res.setContentTypeFromExtension(file.extension);
+    //    res.send(file.data, file.size);
+    return framework::Result::Ok;
 }
 
-esp_err_t ProvisioningServer::handleStaticFile(httpd_req_t *req)
-{
-    ESP_LOGD(TAG, "handleStaticFile");
-//    auto *self = fromReq(req);
-	auto *self = static_cast<ProvisioningServer*>(req->user_ctx);
-    return self->fileRouter->handle(req);
+// ------------------------------------------------------------
+// Submit credentials
+// ------------------------------------------------------------
+framework::Result ProvisioningServer::handleSubmit(http::HttpRequest &req, http::HttpResponse &res) {
+    ESP_LOGD(TAG, "handleSubmit not implemented");
+    //    auto ssid = req.formField("ssid");
+    //    auto pass = req.formField("password");
+    //
+    //    if (!ssid || !pass) {
+    //        return fw::Result::BadRequest;
+    //    }
+    //
+    //    // Notify provisioning state machine
+    //    ctx.stateMachine->credentialsSubmitted(ssid.value(), pass.value());
+    //
+    //    res.json("{\"status\":\"submitted\"}");
+    res.json("{\"status\":\"status\"}");
+    return framework::Result::Ok;
+}
+
+// ------------------------------------------------------------
+// Status
+// ------------------------------------------------------------
+framework::Result ProvisioningServer::handleStatus(http::HttpRequest &req, http::HttpResponse &res) {
+    ESP_LOGD(TAG, "handleSubmit not implemented");
+    //    auto state = ctx.stateMachine->currentState();
+    //    auto err   = ctx.stateMachine->lastError();
+    //
+    //    std::string json = "{\"state\":\"" + toString(state) +
+    //                       "\",\"error\":\"" + toString(err) + "\"}";
+    //
+    //    res.json(json);
+    res.json("{\"status\":\"status\"}");
+    return framework::Result::Ok;
+}
+
+// ------------------------------------------------------------
+// Scan results
+// ------------------------------------------------------------
+framework::Result ProvisioningServer::handleScan(http::HttpRequest &req, http::HttpResponse &res) {
+    ESP_LOGD(TAG, "handleScan not implemented");
+    //    auto results = ctx.stateMachine->scanResultsJson();
+    //
+    //    res.json(results);
+    res.json("{\"status\":\"scan\"}");
+    return framework::Result::Ok;
+}
+
+void ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
+    const std::string &path = req.path();
+
+//    if (path == "/provision/status") {
+//        return handleStatus(req, res);
+//    }
+//
+//    if (path == "/provision/reset") {
+//        return handleReset(req, res);
+//    }
+//
+//    if (path == "/provision/retry") {
+//        return handleRetry(req, res);
+//    }
+//
+    // fallback: serve provisioning UI
+    return staticHandler.handle(req, res);
 }
 
 } // namespace wifi_manager
