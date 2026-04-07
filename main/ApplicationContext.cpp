@@ -15,6 +15,5 @@ void ApplicationContext::start() {
 }
 
 void ApplicationContext::loop() {
-    // Optional: forward to WiFiManager loop if needed
-    // framework.loop();  // if you add one later
+    // Optional: forward to WiFiManager or Framework loop if needed
 }

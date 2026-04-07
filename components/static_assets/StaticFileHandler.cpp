@@ -1,41 +1,44 @@
 #include "static_assets/StaticFileHandler.hpp"
+
 #include "esp_log.h"
 
 namespace static_assets {
 
-static const char* TAG = "StaticFileHandler";
+static const char *TAG = "StaticFileHandler";
 
-StaticFileHandler::StaticFileHandler(std::string basePath,
-                                     std::string defaultFile)
+StaticFileHandler::StaticFileHandler(std::string basePath, std::string defaultFile)
     : base(std::move(basePath))
     , defaultFile(std::move(defaultFile))
-    , table()   // EmbeddedAssetTable has no state, so default construct
-{
-}
+    , table() // EmbeddedAssetTable has no state, so default construct
+{}
 
-void StaticFileHandler::handle(http::HttpRequest& request,
-                               http::HttpResponse& response)
-{
+void StaticFileHandler::handle(http::HttpRequest &request, http::HttpResponse &response) {
+    ESP_LOGD(TAG, "handle");
     // Convert string_view → string safely
+	ESP_LOGD(TAG, "uri '%.*s'", (int)request.uri().size(), request.uri().data());
     std::string resolved = resolvePath(request.uri());
 
-    const EmbeddedAsset* asset = table.find(resolved);
+	ESP_LOGD(TAG, "resolved path %s", resolved.c_str());
+
+    const EmbeddedAsset *asset = table.find(resolved);
     if (!asset) {
         ESP_LOGW(TAG, "Asset not found: %s", resolved.c_str());
-// TODO fix this       response.setStatus(404);
+        // TODO fix this       response.setStatus(404);
         response.send("Not found");
         return;
     }
 
-    const char* type = contentTypeForPath(resolved);
+    const char *type = contentTypeForPath(resolved);
     response.setType(type);
     response.send(asset->data, asset->size);
 }
 
-std::string StaticFileHandler::resolvePath(std::string_view uri) const
-{
+std::string StaticFileHandler::resolvePath(std::string_view uri) const {
+	ESP_LOGD(TAG, "resolvePath");
     // Convert string_view → string
     std::string path(uri.data(), uri.size());
+	ESP_LOGD(TAG, "base='%s' (len=%zu)", base.c_str(), base.size());
+	ESP_LOGD(TAG, "path='%s'", path.c_str());
 
     // Must start with base
     if (!path.starts_with(base)) {
@@ -53,14 +56,19 @@ std::string StaticFileHandler::resolvePath(std::string_view uri) const
     return sub;
 }
 
-const char* StaticFileHandler::contentTypeForPath(const std::string& path)
-{
-    if (path.ends_with(".html")) return "text/html";
-    if (path.ends_with(".js"))   return "application/javascript";
-    if (path.ends_with(".css"))  return "text/css";
-    if (path.ends_with(".png"))  return "image/png";
-    if (path.ends_with(".jpg"))  return "image/jpeg";
-    if (path.ends_with(".svg"))  return "image/svg+xml";
+const char *StaticFileHandler::contentTypeForPath(const std::string &path) {
+    if (path.ends_with(".html"))
+        return "text/html";
+    if (path.ends_with(".js"))
+        return "application/javascript";
+    if (path.ends_with(".css"))
+        return "text/css";
+    if (path.ends_with(".png"))
+        return "image/png";
+    if (path.ends_with(".jpg"))
+        return "image/jpeg";
+    if (path.ends_with(".svg"))
+        return "image/svg+xml";
 
     return "application/octet-stream";
 }

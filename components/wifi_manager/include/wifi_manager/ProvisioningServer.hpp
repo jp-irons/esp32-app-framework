@@ -27,20 +27,6 @@ public:
 	void handle(http::HttpRequest& req, http::HttpResponse& res) override;
 	
 private:
-    // Handlers
-    framework::Result handleStaticFile(http::HttpRequest& req,
-                                http::HttpResponse& res);
-
-    framework::Result handleSubmit(http::HttpRequest& req,
-                            http::HttpResponse& res);
-
-    framework::Result handleStatus(http::HttpRequest& req,
-                            http::HttpResponse& res);
-
-    framework::Result handleScan(http::HttpRequest& req,
-                          http::HttpResponse& res);
-
-private:
     WiFiContext& ctx;
 
     http::HttpServer server;

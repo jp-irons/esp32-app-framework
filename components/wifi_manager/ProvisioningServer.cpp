@@ -21,7 +21,8 @@ static const char *TAG = "ProvisioningServer";
 ProvisioningServer::ProvisioningServer(WiFiContext &ctx)
     : ctx(ctx)
     , server()
-    , staticHandler("/provision", "index.html")
+	// TODO sort this out properly?
+    , staticHandler("/assets", "index.html")
     , wifiHandler(ctx)
     , credentialHandler(*ctx.credentialStore) {}
 
@@ -61,72 +62,10 @@ void ProvisioningServer::stop() {
     server.stop();
 }
 
-// TODO remove legacy handlers
-// ------------------------------------------------------------
-// Static file handler
-// ------------------------------------------------------------
-framework::Result ProvisioningServer::handleStaticFile(http::HttpRequest &req, http::HttpResponse &res) {
-    ESP_LOGD(TAG, "handleStaticFile not implemented");
-    //    auto file = staticRouter.serve(req.path());
-    //
-    //    if (!file.found) {
-    //        return framework::Result::NotFound;
-    //    }
-    //    //    res.setContentTypeFromExtension(file.extension);
-    //    res.send(file.data, file.size);
-    return framework::Result::Ok;
-}
-
-// ------------------------------------------------------------
-// Submit credentials
-// ------------------------------------------------------------
-framework::Result ProvisioningServer::handleSubmit(http::HttpRequest &req, http::HttpResponse &res) {
-    ESP_LOGD(TAG, "handleSubmit not implemented");
-    //    auto ssid = req.formField("ssid");
-    //    auto pass = req.formField("password");
-    //
-    //    if (!ssid || !pass) {
-    //        return fw::Result::BadRequest;
-    //    }
-    //
-    //    // Notify provisioning state machine
-    //    ctx.stateMachine->credentialsSubmitted(ssid.value(), pass.value());
-    //
-    //    res.json("{\"status\":\"submitted\"}");
-    res.json("{\"status\":\"status\"}");
-    return framework::Result::Ok;
-}
-
-// ------------------------------------------------------------
-// Status
-// ------------------------------------------------------------
-framework::Result ProvisioningServer::handleStatus(http::HttpRequest &req, http::HttpResponse &res) {
-    ESP_LOGD(TAG, "handleSubmit not implemented");
-    //    auto state = ctx.stateMachine->currentState();
-    //    auto err   = ctx.stateMachine->lastError();
-    //
-    //    std::string json = "{\"state\":\"" + toString(state) +
-    //                       "\",\"error\":\"" + toString(err) + "\"}";
-    //
-    //    res.json(json);
-    res.json("{\"status\":\"status\"}");
-    return framework::Result::Ok;
-}
-
-// ------------------------------------------------------------
-// Scan results
-// ------------------------------------------------------------
-framework::Result ProvisioningServer::handleScan(http::HttpRequest &req, http::HttpResponse &res) {
-    ESP_LOGD(TAG, "handleScan not implemented");
-    //    auto results = ctx.stateMachine->scanResultsJson();
-    //
-    //    res.json(results);
-    res.json("{\"status\":\"scan\"}");
-    return framework::Result::Ok;
-}
-
+// handle requests not handled elsewhere
 void ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
     const std::string &path = req.path();
+	ESP_LOGD(TAG, "handle");
 
 //    if (path == "/provision/status") {
 //        return handleStatus(req, res);
