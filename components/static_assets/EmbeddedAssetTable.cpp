@@ -39,6 +39,7 @@ static const AssetEntry assets[] = {
 // Modern API
 // ------------------------------------------------------------
 const EmbeddedAsset *EmbeddedAssetTable::find(std::string_view path) const {
+	// TODO review logging - probably over the top.
 	ESP_LOGD(TAG, "find '%.*s'", (int)path.size(), path.data());
 	
     for (auto &a : assets) {

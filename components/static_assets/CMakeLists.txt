@@ -5,12 +5,7 @@ idf_component_register(
     INCLUDE_DIRS
         "include"
     REQUIRES
-        credential_store
-        core_api        
-        wifi_manager
         http
-        static_assets
-        framework
     EMBED_FILES
         assets/index.html
         assets/app.js
