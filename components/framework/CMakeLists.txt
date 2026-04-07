@@ -6,8 +6,9 @@ idf_component_register(
         include
 
     REQUIRES
-        wifi_manager
-        credential_store
         core_api
+        credential_store
         http
+        static_assets
+        wifi_manager
 )

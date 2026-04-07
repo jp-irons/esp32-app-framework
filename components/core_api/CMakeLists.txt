@@ -2,10 +2,8 @@ idf_component_register(
     SRCS
         CredentialApiHandler.cpp
         WiFiApiHandler.cpp
-
     INCLUDE_DIRS
-        "include"
-
+        include
     REQUIRES
         credential_store
         wifi_manager
