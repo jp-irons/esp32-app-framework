@@ -1,9 +1,10 @@
-#include <string>
 #include "include/wifi_manager/WiFiTypes.hpp"
+
+#include <string>
 
 namespace wifi_manager {
 
-const char* toString(WiFiState state) {
+const char *toString(WiFiState state) {
     switch (state) {
         case WiFiState::UNINITIALISED:
             return "UNINITIALISED";
@@ -44,7 +45,27 @@ const char* toString(WiFiState state) {
     return "UNKNOWN";
 }
 
-const char* toString(WiFiError err) {
+const char *toString(WiFiAuthMode auth) {
+    switch (auth) {
+        case wifi_manager::WiFiAuthMode::Open:
+            return "Open";
+        case wifi_manager::WiFiAuthMode::Unknown:
+            return "Unknown";
+        case wifi_manager::WiFiAuthMode::WEP:
+            return "WEP";
+        case wifi_manager::WiFiAuthMode::WPA_PSK:
+            return "WPA_PSK";
+        case wifi_manager::WiFiAuthMode::WPA2_PSK:
+            return "WPA2_PSK";
+        case wifi_manager::WiFiAuthMode::WPA3_PSK:
+            return "WPA3_PSK";
+        case wifi_manager::WiFiAuthMode::WPA_WPA2_PSK:
+            return "WPA_WPA2_PSK";
+    }
+    return "UNKNOWN";
+}
+
+const char *toString(WiFiError err) {
     switch (err) {
         case WiFiError::NONE:
             return "NONE";
@@ -72,24 +93,22 @@ const char* toString(WiFiError err) {
             return "DRIVER_START_FAILED";
         case WiFiError::UNKNOWN:
             return "UNKNOWN";
-
     }
     return "UNKNOWN";
 }
 
-std::string toString(uint8_t reason){
-	return toString(toWiFiError(reason));
+std::string toString(uint8_t reason) {
+    return toString(toWiFiError(reason));
 }
 
-WiFiError toWiFiError(uint8_t reason)
-{
+WiFiError toWiFiError(uint8_t reason) {
     switch (reason) {
 
         // -------------------------
         // Authentication failures
         // -------------------------
-        case 2:   // WIFI_REASON_AUTH_EXPIRE
-        case 15:  // WIFI_REASON_AUTH_FAIL
+        case 2: // WIFI_REASON_AUTH_EXPIRE
+        case 15: // WIFI_REASON_AUTH_FAIL
             return WiFiError::AUTH_FAILED;
 
         // -------------------------
@@ -101,7 +120,7 @@ WiFiError toWiFiError(uint8_t reason)
         // -------------------------
         // Timeouts / general failures
         // -------------------------
-        case 4:   // WIFI_REASON_ASSOC_EXPIRE
+        case 4: // WIFI_REASON_ASSOC_EXPIRE
         case 200: // WIFI_REASON_BEACON_TIMEOUT
         case 202: // WIFI_REASON_CONNECTION_FAIL
             return WiFiError::CONNECTION_TIMEOUT;
@@ -115,7 +134,7 @@ WiFiError toWiFiError(uint8_t reason)
         // -------------------------
         // AP kicked us off (normal)
         // -------------------------
-        case 3:   // WIFI_REASON_ASSOC_LEAVE
+        case 3: // WIFI_REASON_ASSOC_LEAVE
             return WiFiError::NONE;
 
         // -------------------------
@@ -124,4 +143,5 @@ WiFiError toWiFiError(uint8_t reason)
         default:
             return WiFiError::UNKNOWN;
     }
-}} // namespace wifi_manager
+}
+} // namespace wifi_manager

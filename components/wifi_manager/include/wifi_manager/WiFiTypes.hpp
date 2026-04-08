@@ -6,7 +6,9 @@
 
 namespace wifi_manager {
 
-enum class WiFiAuthMode { Open, WEP, WPA_PSK, WPA2_PSK, WPA_WPA2_PSK, WPA3_PSK, Unknown };
+enum class WiFiAuthMode { 
+	Open, WEP, WPA_PSK, WPA2_PSK, WPA_WPA2_PSK, WPA3_PSK, Unknown 
+};
 
 struct WiFiAp {
     std::string ssid; // Human-readable SSID
@@ -116,6 +118,8 @@ enum class WiFiError {
 const char *toString(WiFiState state);
 
 const char *toString(WiFiError err);
+
+const char *toString(WiFiAuthMode auth);
 
 WiFiError toWiFiError(uint8_t reason);
 

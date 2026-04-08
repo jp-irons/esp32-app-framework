@@ -206,59 +206,62 @@ void WiFiInterface::handleIPEvent(esp_event_base_t base, int32_t id, void *data)
     }
 }
 
-common::Result WiFiInterface::scan(std::vector<WiFiAp> &outAps) {
-    // Preconditions: driver must be started and in STA mode
-    if (!driverStarted || currentMode != WIFI_MODE_STA) {
-        return common::Result::Unsupported; // Operation not valid in current mode
+common::Result WiFiInterface::scan(std::vector<WiFiAp>& outAps)
+{
+	ESP_LOGD(TAG, "scan");
+    if (!driverStarted) {
+        ESP_LOGW(TAG, "scan unsupported: driver not started");
+        return common::Result::Unsupported;
     }
 
-    wifi_scan_config_t config = {};
-    config.ssid = nullptr;
-    config.bssid = nullptr;
-    config.channel = 0;
-    config.show_hidden = true;
-    config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-    config.scan_time.active.min = 100;
-    config.scan_time.active.max = 300;
+    const bool initialStaActive = staActive;
 
-    // Start scan (blocking)
-    esp_err_t err = esp_wifi_scan_start(&config, true);
-    if (err != ESP_OK) {
+    // Ensure STA is enabled
+    if (!setStaState(true)) {
         return common::Result::InternalError;
     }
 
-    // Get number of APs
-    uint16_t apCount = 0;
-    err = esp_wifi_scan_get_ap_num(&apCount);
+    // ---- perform scan ----
+	wifi_scan_config_t scanConfig = {};
+	scanConfig.ssid = nullptr;
+	scanConfig.bssid = nullptr;
+	scanConfig.channel = 0;
+	scanConfig.show_hidden = true;
+	scanConfig.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+	scanConfig.scan_time.active.min = 100;
+	scanConfig.scan_time.active.max = 300;
+
+    esp_err_t err = esp_wifi_scan_start(&scanConfig, true);
     if (err != ESP_OK) {
+        setStaState(initialStaActive);   // restore before returning
         return common::Result::InternalError;
     }
 
-    if (apCount == 0) {
-        outAps.clear();
-        return common::Result::NotFound; // No APs visible
-    }
+	// Retrieve AP records
+	uint16_t apCount = 0;
+	std::vector<wifi_ap_record_t> records(apCount);
+	err = esp_wifi_scan_get_ap_records(&apCount, records.data());
+	if (err != ESP_OK) {
+		setStaState(initialStaActive);
+	    return common::Result::InternalError;
+	}
 
-    // Retrieve AP records
-    std::vector<wifi_ap_record_t> records(apCount);
-    err = esp_wifi_scan_get_ap_records(&apCount, records.data());
-    if (err != ESP_OK) {
-        return common::Result::InternalError;
-    }
+	// Convert to domain type
+	outAps.clear();
+	outAps.reserve(apCount);
 
-    // Convert to domain type
-    outAps.clear();
-    outAps.reserve(apCount);
-
-    for (const auto &rec : records) {
-        WiFiAp ap;
-        ap.ssid = reinterpret_cast<const char *>(rec.ssid);
-        memcpy(ap.bssid, rec.bssid, 6);
-        ap.rssi = rec.rssi;
-        ap.channel = rec.primary;
-        ap.auth = toAuthMode(rec.authmode);
-        outAps.push_back(ap);
-    }
+	for (const auto &rec : records) {
+	    WiFiAp ap;
+	    ap.ssid = reinterpret_cast<const char *>(rec.ssid);
+	    memcpy(ap.bssid, rec.bssid, 6);
+	    ap.rssi = rec.rssi;
+	    ap.channel = rec.primary;
+	    ap.auth = toAuthMode(rec.authmode);
+	    outAps.push_back(ap);
+	}
+	
+    // Restore original STA state
+    setStaState(initialStaActive);
 
     return common::Result::Ok;
 }
@@ -291,5 +294,29 @@ wifi_mode_t WiFiInterface::computeMode() const {
         return WIFI_MODE_STA;
     return WIFI_MODE_NULL;
 }
+
+bool WiFiInterface::setStaState(bool enable)
+{
+    if (staActive == enable) {
+        return true; // nothing to do
+    }
+
+    staActive = enable;
+    wifi_mode_t mode = computeMode();
+
+    esp_err_t err = esp_wifi_set_mode(mode);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "setStaState(%d): esp_wifi_set_mode(%d) failed: %s",
+                 enable, (int)mode, esp_err_to_name(err));
+
+        // rollback
+        staActive = !enable;
+        return false;
+    }
+
+    currentMode = mode;
+    return true;
+}
+
 
 } // namespace wifi_manager
