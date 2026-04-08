@@ -58,20 +58,21 @@ std::string WiFiApiHandler::extractAction(const char *uri) {
 }
 
 bool WiFiApiHandler::handleScan(HttpResponse &res) {
-	ESP_LOGD(TAG, "handleScan");
+    ESP_LOGD(TAG, "handleScan");
     std::vector<WiFiAp> aps;
     common::Result r = wifiCtx.wifiInterface->scan(aps);
-	ESP_LOGD(TAG, "scan result");
+    ESP_LOGD(TAG, "scan result");
 
     switch (r) {
         case common::Result::Ok: {
-			ESP_LOGD(TAG, "result Ok");
+            ESP_LOGD(TAG, "result Ok");
             uint16_t count = aps.size();
             cJSON *root = cJSON_CreateArray();
 
             for (int i = 0; i < count; i++) {
                 cJSON *item = cJSON_CreateObject();
                 cJSON_AddStringToObject(item, "ssid", aps[i].ssid.c_str());
+// TODO bssid to ui			cJSON_AddNumberToObject(item, "bssid", aps[i].bssid);
                 cJSON_AddNumberToObject(item, "rssi", aps[i].rssi);
                 cJSON_AddStringToObject(item, "auth", toString(aps[i].auth));
                 cJSON_AddItemToArray(root, item);
@@ -83,25 +84,33 @@ bool WiFiApiHandler::handleScan(HttpResponse &res) {
         }
 
         case common::Result::NotFound:
-			ESP_LOGD(TAG, "result NotFound");
+            ESP_LOGD(TAG, "result NotFound");
             res.jsonStatus("no_access_points_found");
             return true;
 
         case common::Result::Unsupported:
+            ESP_LOGW(TAG, "result Unsupported");
             res.jsonStatus("wifi_not_ready");
             return false;
 
         case common::Result::BadRequest:
+            ESP_LOGW(TAG, "result BadRequest");
             res.jsonStatus("bad_request");
             return false;
 
         case common::Result::Forbidden:
+            ESP_LOGW(TAG, "result Forbidden");
             res.jsonStatus("forbidden");
             return false;
 
         case common::Result::InternalError:
-        default:
+            ESP_LOGW(TAG, "result InternalError");
             res.jsonStatus("internal_error");
+            return false;
+
+        default:
+            ESP_LOGW(TAG, "result unknown result");
+            res.jsonStatus("unknown result");
             return false;
     }
 }

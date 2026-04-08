@@ -4,6 +4,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
 #include "wifi_manager/ProvisioningServer.hpp"
 #include "wifi_manager/RuntimeServer.hpp"
 #include "wifi_manager/WiFiContext.hpp"
@@ -166,8 +167,8 @@ void WiFiInterface::ipEventHandler(void *arg, esp_event_base_t base, int32_t id,
  * INSTANCE EVENT HANDLERS
  */
 void WiFiInterface::handleWiFiEvent(esp_event_base_t base, int32_t id, void *data) {
+    ESP_LOGD(TAG, "handleWiFiEvent");
     switch (id) {
-
         case WIFI_EVENT_STA_START:
             ESP_LOGD(TAG, "WIFI_EVENT_STA_START");
             break;
@@ -192,6 +193,23 @@ void WiFiInterface::handleWiFiEvent(esp_event_base_t base, int32_t id, void *dat
             ESP_LOGI(TAG, "AP stopped");
             break;
 
+        case WIFI_EVENT_AP_STACONNECTED:
+            ESP_LOGI(TAG, "STA connected");
+            break;
+        case WIFI_EVENT_STA_STOP:
+            ESP_LOGI(TAG, "STA stopped");
+            break;
+        case WIFI_EVENT_AP_STADISCONNECTED:
+            ESP_LOGI(TAG, "STA disconnected");
+            break;
+        case WIFI_EVENT_HOME_CHANNEL_CHANGE:
+            ESP_LOGI(TAG, "Home channel changed");
+            break;
+
+        case WIFI_EVENT_SCAN_DONE:
+            ESP_LOGI(TAG, "Scan done");
+            break;
+
         default:
             ESP_LOGD(TAG, "Unhandled WiFi event: %ld", id);
             break;
@@ -206,11 +224,10 @@ void WiFiInterface::handleIPEvent(esp_event_base_t base, int32_t id, void *data)
     }
 }
 
-common::Result WiFiInterface::scan(std::vector<WiFiAp>& outAps)
-{
-	ESP_LOGD(TAG, "scan");
+common::Result WiFiInterface::scan(std::vector<WiFiAp> &outAps) {
+    ESP_LOGD(TAG, "scan");
     if (!driverStarted) {
-        ESP_LOGW(TAG, "scan unsupported: driver not started");
+        ESP_LOGE(TAG, "scan() unsupported: driver not started");
         return common::Result::Unsupported;
     }
 
@@ -218,48 +235,50 @@ common::Result WiFiInterface::scan(std::vector<WiFiAp>& outAps)
 
     // Ensure STA is enabled
     if (!setStaState(true)) {
+        ESP_LOGE(TAG, "scan() setStaState true failed");
         return common::Result::InternalError;
     }
-
-    // ---- perform scan ----
-	wifi_scan_config_t scanConfig = {};
-	scanConfig.ssid = nullptr;
-	scanConfig.bssid = nullptr;
-	scanConfig.channel = 0;
-	scanConfig.show_hidden = true;
-	scanConfig.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-	scanConfig.scan_time.active.min = 100;
-	scanConfig.scan_time.active.max = 300;
-
+	
+    wifi_scan_config_t scanConfig = {};
+	ESP_LOGD(TAG, "scan starting scan");
     esp_err_t err = esp_wifi_scan_start(&scanConfig, true);
     if (err != ESP_OK) {
-        setStaState(initialStaActive);   // restore before returning
+        ESP_LOGE(TAG, "scan esp_wifi_scan_start returned %s", esp_err_to_name(err));
+        setStaState(initialStaActive); // restore before returning
         return common::Result::InternalError;
     }
 
-	// Retrieve AP records
-	uint16_t apCount = 0;
-	std::vector<wifi_ap_record_t> records(apCount);
-	err = esp_wifi_scan_get_ap_records(&apCount, records.data());
+    // Retrieve AP records
+    uint16_t apCount = 0;
+	err = esp_wifi_scan_get_ap_num(&apCount);
 	if (err != ESP_OK) {
-		setStaState(initialStaActive);
+	    ESP_LOGE(TAG, "scan() esp_wifi_scan_get_ap_number error %s", esp_err_to_name(err));
+	    setStaState(initialStaActive);
 	    return common::Result::InternalError;
 	}
 
-	// Convert to domain type
-	outAps.clear();
-	outAps.reserve(apCount);
+    std::vector<wifi_ap_record_t> records(apCount);
+    err = esp_wifi_scan_get_ap_records(&apCount, records.data());
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "scan() esp_wifi_scan_get_ap_records error %s", esp_err_to_name(err));
+        setStaState(initialStaActive);
+        return common::Result::InternalError;
+    }
 
-	for (const auto &rec : records) {
-	    WiFiAp ap;
-	    ap.ssid = reinterpret_cast<const char *>(rec.ssid);
-	    memcpy(ap.bssid, rec.bssid, 6);
-	    ap.rssi = rec.rssi;
-	    ap.channel = rec.primary;
-	    ap.auth = toAuthMode(rec.authmode);
-	    outAps.push_back(ap);
-	}
-	
+    // Convert to domain type
+    outAps.clear();
+    outAps.reserve(apCount);
+
+    for (const auto &rec : records) {
+        WiFiAp ap;
+        ap.ssid = reinterpret_cast<const char *>(rec.ssid);
+        memcpy(ap.bssid, rec.bssid, 6);
+        ap.rssi = rec.rssi;
+        ap.channel = rec.primary;
+        ap.auth = toAuthMode(rec.authmode);
+        outAps.push_back(ap);
+    }
+
     // Restore original STA state
     setStaState(initialStaActive);
 
@@ -295,8 +314,8 @@ wifi_mode_t WiFiInterface::computeMode() const {
     return WIFI_MODE_NULL;
 }
 
-bool WiFiInterface::setStaState(bool enable)
-{
+bool WiFiInterface::setStaState(bool enable) {
+    ESP_LOGD(TAG, "setStaState %d", enable);
     if (staActive == enable) {
         return true; // nothing to do
     }
@@ -306,9 +325,7 @@ bool WiFiInterface::setStaState(bool enable)
 
     esp_err_t err = esp_wifi_set_mode(mode);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "setStaState(%d): esp_wifi_set_mode(%d) failed: %s",
-                 enable, (int)mode, esp_err_to_name(err));
-
+        ESP_LOGE(TAG, "setStaState() esp_wifi_set_mode error %s", esp_err_to_name(err));
         // rollback
         staActive = !enable;
         return false;
@@ -317,6 +334,5 @@ bool WiFiInterface::setStaState(bool enable)
     currentMode = mode;
     return true;
 }
-
 
 } // namespace wifi_manager
