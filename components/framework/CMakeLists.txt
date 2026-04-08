@@ -6,9 +6,9 @@ idf_component_register(
         include
 
     REQUIRES
+        common
         credential_store
         http
         static_assets
         wifi_manager
-        shared
 )

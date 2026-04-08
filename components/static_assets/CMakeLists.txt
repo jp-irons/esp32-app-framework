@@ -5,7 +5,8 @@ idf_component_register(
     INCLUDE_DIRS
         "include"
     REQUIRES
-        http
+         common
+         http
     EMBED_FILES
         assets/index.html
         assets/app.js

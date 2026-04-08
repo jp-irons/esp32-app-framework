@@ -1,5 +1,6 @@
 #include "wifi_manager/WiFiInterface.hpp"
 
+#include "common/Result.hpp"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
@@ -43,6 +44,9 @@ void WiFiInterface::startDriver() {
                                                         this, nullptr));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_NULL));
+    ESP_ERROR_CHECK(esp_wifi_start()); // ← place it here
+    driverStarted = true;
+    currentMode = WIFI_MODE_NULL; // not set until AP or STA is started
 }
 
 void WiFiInterface::stopDriver() {
@@ -57,9 +61,7 @@ void WiFiInterface::stopDriver() {
 void WiFiInterface::startAp(const ApConfig &config) {
     ESP_LOGI(TAG, "Starting SoftAP: %s", config.ssid.c_str());
     /*        ***********************   */
-    wifi_config_t ap_cfg = {};
-    strncpy((char *) ap_cfg.ap.ssid, config.ssid.c_str(), sizeof(ap_cfg.ap.ssid));
-
+    wifi_config_t ap_cfg = config.toEspConfig();
     bool useOpenAp = false;
 
     if (config.password.empty()) {
@@ -78,19 +80,20 @@ void WiFiInterface::startAp(const ApConfig &config) {
         strncpy((char *) ap_cfg.ap.password, config.password.c_str(), sizeof(ap_cfg.ap.password));
     }
 
-    ap_cfg.ap.channel = config.channel;
-    ap_cfg.ap.max_connection = config.maxConnections;
-
     ESP_LOGI(TAG, "Starting SoftAP: %s (authmode=%s)", config.ssid.c_str(), useOpenAp ? "OPEN" : "WPA2");
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    apActive = true;
+    wifi_mode_t mode = computeMode();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(mode));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    currentMode = mode;
 }
 
 void WiFiInterface::stopAp() {
     ESP_LOGI(TAG, "Stopping SoftAP");
-    ESP_ERROR_CHECK(esp_wifi_stop());
+    apActive = false;
+    wifi_mode_t mode = computeMode();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(mode));
+    currentMode = mode;
 }
 
 /**
@@ -99,19 +102,25 @@ void WiFiInterface::stopAp() {
 void WiFiInterface::connectSta(const StaConfig &cfg) {
     ESP_LOGI(TAG, "Connecting STA to SSID: %s", cfg.ssid.c_str());
 
-    wifi_config_t sta_cfg = {};
+    wifi_config_t sta_cfg = cfg.toEspConfig();
     strncpy((char *) sta_cfg.sta.ssid, cfg.ssid.c_str(), sizeof(sta_cfg.sta.ssid));
     strncpy((char *) sta_cfg.sta.password, cfg.password.c_str(), sizeof(sta_cfg.sta.password));
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    staActive = true;
+    wifi_mode_t mode = computeMode();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(mode));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
-    ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_connect());
+    currentMode = mode;
 }
 
 void WiFiInterface::disconnectSta() {
     ESP_LOGD(TAG, "Disconnecting STA");
-    esp_wifi_disconnect();
+    staActive = false;
+    wifi_mode_t mode = computeMode();
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(mode));
+    currentMode = mode;
 }
 
 /**
@@ -195,6 +204,92 @@ void WiFiInterface::handleIPEvent(esp_event_base_t base, int32_t id, void *data)
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
         ctx.stateMachine->onStaGotIp(event);
     }
+}
+
+common::Result WiFiInterface::scan(std::vector<WiFiAp> &outAps) {
+    // Preconditions: driver must be started and in STA mode
+    if (!driverStarted || currentMode != WIFI_MODE_STA) {
+        return common::Result::Unsupported; // Operation not valid in current mode
+    }
+
+    wifi_scan_config_t config = {};
+    config.ssid = nullptr;
+    config.bssid = nullptr;
+    config.channel = 0;
+    config.show_hidden = true;
+    config.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+    config.scan_time.active.min = 100;
+    config.scan_time.active.max = 300;
+
+    // Start scan (blocking)
+    esp_err_t err = esp_wifi_scan_start(&config, true);
+    if (err != ESP_OK) {
+        return common::Result::InternalError;
+    }
+
+    // Get number of APs
+    uint16_t apCount = 0;
+    err = esp_wifi_scan_get_ap_num(&apCount);
+    if (err != ESP_OK) {
+        return common::Result::InternalError;
+    }
+
+    if (apCount == 0) {
+        outAps.clear();
+        return common::Result::NotFound; // No APs visible
+    }
+
+    // Retrieve AP records
+    std::vector<wifi_ap_record_t> records(apCount);
+    err = esp_wifi_scan_get_ap_records(&apCount, records.data());
+    if (err != ESP_OK) {
+        return common::Result::InternalError;
+    }
+
+    // Convert to domain type
+    outAps.clear();
+    outAps.reserve(apCount);
+
+    for (const auto &rec : records) {
+        WiFiAp ap;
+        ap.ssid = reinterpret_cast<const char *>(rec.ssid);
+        memcpy(ap.bssid, rec.bssid, 6);
+        ap.rssi = rec.rssi;
+        ap.channel = rec.primary;
+        ap.auth = toAuthMode(rec.authmode);
+        outAps.push_back(ap);
+    }
+
+    return common::Result::Ok;
+}
+
+WiFiAuthMode WiFiInterface::toAuthMode(wifi_auth_mode_t mode) {
+    switch (mode) {
+        case WIFI_AUTH_OPEN:
+            return WiFiAuthMode::Open;
+        case WIFI_AUTH_WEP:
+            return WiFiAuthMode::WEP;
+        case WIFI_AUTH_WPA_PSK:
+            return WiFiAuthMode::WPA_PSK;
+        case WIFI_AUTH_WPA2_PSK:
+            return WiFiAuthMode::WPA2_PSK;
+        case WIFI_AUTH_WPA_WPA2_PSK:
+            return WiFiAuthMode::WPA_WPA2_PSK;
+        case WIFI_AUTH_WPA3_PSK:
+            return WiFiAuthMode::WPA3_PSK;
+        default:
+            return WiFiAuthMode::Unknown;
+    }
+}
+
+wifi_mode_t WiFiInterface::computeMode() const {
+    if (apActive && staActive)
+        return WIFI_MODE_APSTA;
+    if (apActive)
+        return WIFI_MODE_AP;
+    if (staActive)
+        return WIFI_MODE_STA;
+    return WIFI_MODE_NULL;
 }
 
 } // namespace wifi_manager

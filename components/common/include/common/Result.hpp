@@ -1,6 +1,6 @@
 #pragma once
 
-namespace framework {
+namespace common {
 
 enum class Result {
     Ok,            // Operation succeeded

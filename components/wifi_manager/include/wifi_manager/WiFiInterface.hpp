@@ -4,6 +4,11 @@
 #include "credential_store/CredentialStore.hpp"
 #include "esp_event_base.h"
 #include "esp_netif_types.h"
+#include "esp_wifi_types_generic.h"
+
+namespace common {
+enum class Result;
+}
 
 namespace wifi_manager {
 
@@ -31,11 +36,20 @@ class WiFiInterface {
     void startRuntimeServer();
     void stopRuntimeServer();
 
+	common::Result scan(std::vector<WiFiAp>& results);
+
   private:
     WiFiContext &ctx;
 
     esp_netif_t *apNetif = nullptr;
     esp_netif_t *staNetif = nullptr;
+	
+	bool driverStarted = false;
+
+	bool apActive = false;
+	bool staActive = false;
+
+	wifi_mode_t currentMode = WIFI_MODE_NULL;
 
     static void wifiEventHandler(void *arg, esp_event_base_t base, int32_t id, void *data);
 
@@ -49,6 +63,9 @@ class WiFiInterface {
 
     void onSTAConnected();
     void onSTADisconnected(uint8_t reason);
+	static WiFiAuthMode toAuthMode(wifi_auth_mode_t mode);
+	wifi_mode_t computeMode() const;
+
 };
 
 } // namespace wifi_manager

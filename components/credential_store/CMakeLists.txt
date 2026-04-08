@@ -5,6 +5,7 @@ idf_component_register(
     INCLUDE_DIRS
         include
     REQUIRES 
-    	nvs_flash
+  		common
+  		nvs_flash
     	http
 )

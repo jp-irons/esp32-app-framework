@@ -15,6 +15,7 @@ idf_component_register(
         nvs_flash
         esp_timer
         cjson
+        common
         credential_store
         http
         static_assets

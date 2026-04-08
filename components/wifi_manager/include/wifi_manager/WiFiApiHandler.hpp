@@ -20,10 +20,10 @@ class WiFiApiHandler : public http::HttpHandler {
 
   private:
     wifi_manager::WiFiContext &wifiCtx;
-    void handleScan(http::HttpResponse &res);
-    void handleStatus(http::HttpResponse &res);
-    void handleConnect(const http::HttpRequest &req, http::HttpResponse &res);
-    void handleDisconnect(http::HttpResponse &res);
+    bool handleScan(http::HttpResponse &res);
+    bool handleStatus(http::HttpResponse &res);
+    bool handleConnect(const http::HttpRequest &req, http::HttpResponse &res);
+    bool handleDisconnect(http::HttpResponse &res);
 	std::string extractAction(const char *uri);
 
 };

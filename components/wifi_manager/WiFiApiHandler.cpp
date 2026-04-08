@@ -24,23 +24,9 @@ bool WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse &res) {
 	std::string action = extractAction(req.path());
 	ESP_LOGD(TAG, "action '%s'", action.c_str());
 
-//    if (path == "/provision/status") {
-//        return handleStatus(req, res);
-//    }
-//
-//    if (path == "/provision/reset") {
-//        return handleReset(req, res);
-//    }
-//
-//    if (path == "/provision/retry") {
-//        return handleRetry(req, res);
-//    }
-//
-
-//    if (path == "/api/wifi/scan") {
-//        handleScan(res);
-//        return true;
-//    }
+    if (action == "scan") {
+        return handleScan(res);
+    }
 //    if (path == "/api/wifi/status") {
 //        handleStatus(res);
 //        return;
@@ -66,20 +52,24 @@ std::string WiFiApiHandler::extractAction(const char *uri) {
     return path.substr(pos + 1);
 }
 
-void WiFiApiHandler::handleScan(HttpResponse &res) {
+bool WiFiApiHandler::handleScan(HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
-void WiFiApiHandler::handleStatus(HttpResponse &res) {
+bool WiFiApiHandler::handleStatus(HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
-void WiFiApiHandler::handleConnect(const HttpRequest &req, HttpResponse &res) {
+bool WiFiApiHandler::handleConnect(const HttpRequest &req, HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
-void WiFiApiHandler::handleDisconnect(HttpResponse &res) {
+bool WiFiApiHandler::handleDisconnect(HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
 } // namespace core_api
