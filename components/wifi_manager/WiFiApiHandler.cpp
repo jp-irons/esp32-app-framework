@@ -57,6 +57,16 @@ std::string WiFiApiHandler::extractAction(const char *uri) {
     return path.substr(pos + 1);
 }
 
+static void formatBssid(const uint8_t bssid[6], char out[18])
+{
+    // Produces "AA:BB:CC:DD:EE:FF"
+    snprintf(out, 18,
+             "%02X:%02X:%02X:%02X:%02X:%02X",
+             bssid[0], bssid[1], bssid[2],
+             bssid[3], bssid[4], bssid[5]);
+}
+
+
 bool WiFiApiHandler::handleScan(HttpResponse &res) {
     ESP_LOGD(TAG, "handleScan");
     std::vector<WiFiAp> aps;
@@ -72,7 +82,9 @@ bool WiFiApiHandler::handleScan(HttpResponse &res) {
             for (int i = 0; i < count; i++) {
                 cJSON *item = cJSON_CreateObject();
                 cJSON_AddStringToObject(item, "ssid", aps[i].ssid.c_str());
-// TODO bssid to ui			cJSON_AddNumberToObject(item, "bssid", aps[i].bssid);
+				char bssidStr[18];
+				formatBssid(aps[i].bssid, bssidStr);
+				cJSON_AddStringToObject(item, "bssid", bssidStr);
                 cJSON_AddNumberToObject(item, "rssi", aps[i].rssi);
                 cJSON_AddStringToObject(item, "auth", toString(aps[i].auth));
                 cJSON_AddItemToArray(root, item);
@@ -129,5 +141,6 @@ bool WiFiApiHandler::handleDisconnect(HttpResponse &res) {
     res.jsonStatus("not_implemented");
     return false;
 }
+
 
 } // namespace wifi_manager
