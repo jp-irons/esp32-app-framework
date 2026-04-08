@@ -15,7 +15,7 @@ CredentialApiHandler::CredentialApiHandler(CredentialStore &s)
     ESP_LOGD(TAG, "constructor");
 }
 
-void CredentialApiHandler::handle(http::HttpRequest& req,
+bool CredentialApiHandler::handle(http::HttpRequest& req,
                 http::HttpResponse& res) {
 	ESP_LOGD(TAG, "handle");
     const std::string &path = req.path();
@@ -24,27 +24,21 @@ void CredentialApiHandler::handle(http::HttpRequest& req,
 
     if (action == "list") {
 		ESP_LOGD(TAG, "handleList");
-        handleList(res);
-        return;
+        return handleList(res);
     }
     if (path == "submit") {
 		ESP_LOGD(TAG, "handleSubmit");
-        handleSubmit(req, res);
-        return;
+        return handleSubmit(req, res);
     }
     if (path == "delete") {
 		ESP_LOGD(TAG, "handleDelete");
-        handleDelete(req, res);
-        return;
+        return handleDelete(req, res);
     }
     if (path == "clear") {
 		ESP_LOGD(TAG, "handleClear");
-        handleClear(res);
-        return;
+        return handleClear(res);
     }
-// TODO gotta do somethin better here for return
-	ESP_LOGD(TAG, "Gotta do somethin better");
-    return;
+    return false;
 }
 
 std::string CredentialApiHandler::extractAction(const char *uri) {
@@ -56,20 +50,24 @@ std::string CredentialApiHandler::extractAction(const char *uri) {
     return path.substr(pos + 1);
 }
 
-void CredentialApiHandler::handleList(HttpResponse &res) {
+bool CredentialApiHandler::handleList(HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
-void CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &res) {
+bool CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
-void CredentialApiHandler::handleDelete(const HttpRequest &req, HttpResponse &res) {
+bool CredentialApiHandler::handleDelete(const HttpRequest &req, HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
-void CredentialApiHandler::handleClear(HttpResponse &res) {
+bool CredentialApiHandler::handleClear(HttpResponse &res) {
     res.jsonStatus("not_implemented");
+	return false;
 }
 
 } // namespace core_api

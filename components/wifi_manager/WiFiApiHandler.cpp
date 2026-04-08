@@ -18,7 +18,7 @@ WiFiApiHandler::WiFiApiHandler(WiFiContext &w)
 
 
 // handle requests not handled elsewhere
-void WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse &res) {
+bool WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse &res) {
 	ESP_LOGD(TAG, "handle");
 	const std::string &path = req.path();
 	std::string action = extractAction(req.path());
@@ -54,7 +54,7 @@ void WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse &res) {
 //        return true;
 //    }
 //
-//    return false;
+    return false;
 }
 
 std::string WiFiApiHandler::extractAction(const char *uri) {

@@ -42,7 +42,10 @@ esp_err_t HttpServer::handlerAdapter(httpd_req_t *req) {
     auto *handler = static_cast<http::HttpHandler *>(req->user_ctx);
     http::HttpRequest request(req);
     http::HttpResponse response(req);
-    handler->handle(request, response);
+    bool resp_ok = handler->handle(request, response);
+	if (!resp_ok) {
+		ESP_LOGW(TAG, "handlerAdapter fail '%s'", req->uri);
+	}
     return ESP_OK;
 }
 

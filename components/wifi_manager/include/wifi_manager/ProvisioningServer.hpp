@@ -23,7 +23,7 @@ public:
     bool start();
     void stop();
 
-	void handle(http::HttpRequest& req, http::HttpResponse& res) override;
+	bool handle(http::HttpRequest& req, http::HttpResponse& res) override;
 	
 private:
     WiFiContext& ctx;

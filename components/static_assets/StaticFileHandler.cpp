@@ -12,7 +12,7 @@ StaticFileHandler::StaticFileHandler(std::string basePath, std::string defaultFi
     , table() // EmbeddedAssetTable has no state, so default construct
 {}
 
-void StaticFileHandler::handle(http::HttpRequest &request, http::HttpResponse &response) {
+bool StaticFileHandler::handle(http::HttpRequest &request, http::HttpResponse &response) {
     ESP_LOGD(TAG, "handle '%s'", request.path());
 	
 	// TODO review logging - probably over the top.
@@ -26,12 +26,13 @@ void StaticFileHandler::handle(http::HttpRequest &request, http::HttpResponse &r
         ESP_LOGW(TAG, "Asset not found: %s", resolved.c_str());
         // TODO fix this       response.setStatus(404);
         response.send("Not found");
-        return;
+        return false;
     }
 
     const char *type = contentTypeForPath(resolved);
     response.setType(type);
     response.send(asset->data, asset->size);
+	return true;
 }
 
 std::string StaticFileHandler::resolvePath(std::string_view uri) const {

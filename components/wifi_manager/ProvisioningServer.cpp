@@ -49,7 +49,7 @@ void ProvisioningServer::stop() {
 }
 
 // handle requests not handled elsewhere
-void ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
+bool ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
     const std::string &path = req.path();
 	ESP_LOGD(TAG, "handle");
 

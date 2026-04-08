@@ -11,7 +11,7 @@ public:
     StaticFileHandler(std::string basePath,
                       std::string defaultFile);
 
-    void handle(http::HttpRequest& request,
+    bool handle(http::HttpRequest& request,
                 http::HttpResponse& response) override;
 
 private:

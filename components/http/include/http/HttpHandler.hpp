@@ -10,7 +10,7 @@ class HttpHandler {
 public:
     virtual ~HttpHandler() = default;
 
-    virtual void handle(HttpRequest& req, HttpResponse& res) = 0;
+    virtual bool handle(HttpRequest& req, HttpResponse& res) = 0;
 };
 
 } // namespace http

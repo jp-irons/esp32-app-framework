@@ -13,13 +13,13 @@ class CredentialStore;
 class CredentialApiHandler : public http::HttpHandler {
   public:
     CredentialApiHandler(credential_store::CredentialStore &store);
-    void handle(http::HttpRequest &req, http::HttpResponse &res) override;
+    bool handle(http::HttpRequest &req, http::HttpResponse &res) override;
 
   private:
-    void handleList(http::HttpResponse &res);
-    void handleSubmit(const http::HttpRequest &req, http::HttpResponse &res);
-    void handleDelete(const http::HttpRequest &req, http::HttpResponse &res);
-    void handleClear(http::HttpResponse &res);
+    bool handleList(http::HttpResponse &res);
+    bool handleSubmit(const http::HttpRequest &req, http::HttpResponse &res);
+    bool handleDelete(const http::HttpRequest &req, http::HttpResponse &res);
+    bool handleClear(http::HttpResponse &res);
 	std::string extractAction(const char* uri);
 
     credential_store::CredentialStore &store;

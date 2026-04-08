@@ -16,7 +16,7 @@ class WiFiApiHandler : public http::HttpHandler {
   public:
     explicit WiFiApiHandler(wifi_manager::WiFiContext &wifi);
 
-    void handle(http::HttpRequest &req, http::HttpResponse &res) override;
+    bool handle(http::HttpRequest &req, http::HttpResponse &res) override;
 
   private:
     wifi_manager::WiFiContext &wifiCtx;
