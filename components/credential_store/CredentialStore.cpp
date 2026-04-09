@@ -1,10 +1,15 @@
 #include "credential_store/CredentialStore.hpp"
 
+#include "common/Result.hpp"
+#include "esp_adapter/EspTypeAdapter.hpp"
+#include "esp_err.h"
 #include "logger/Logger.hpp"
 #include "nvs.h"
 
 #include <algorithm>
 #include <cstring>
+
+using namespace common;
 
 namespace credential_store {
 
@@ -18,26 +23,30 @@ CredentialStore::CredentialStore(const char *nvsNamespace)
 // TODO[CredentialStore::count]: Replace loadAll() with header-only count()
 size_t CredentialStore::count() {
     std::vector<WiFiCredential> entries;
-    if (!loadAll(entries)) {
+    Result r = loadAll(entries);
+    if (r != Result::Ok) {
         return 0;
     }
     return entries.size();
 }
 
-bool CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
+common::Result CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
     log.debug("loadAll");
     nvs_handle_t handle;
     esp_err_t err = nvs_open(ns, NVS_READONLY, &handle);
     if (err != ESP_OK) {
-        log.warn("No credentials found");
-        return false;
+        Result r = esp_adapter::toResult(err);
+        log.warn("Error '%s' getting credentials", toString(r).c_str());
+        return r;
     }
 
     size_t size = 0;
     err = nvs_get_blob(handle, "entries", nullptr, &size);
     if (err != ESP_OK || size == 0) {
+        Result r = esp_adapter::toResult(err);
+        log.warn("Error '%s' accessing nvs", toString(r).c_str());
         nvs_close(handle);
-        return false;
+        return r;
     }
 
     std::vector<uint8_t> buf(size);
@@ -45,7 +54,10 @@ bool CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
     nvs_close(handle);
 
     if (err != ESP_OK) {
-        return false;
+        Result r = esp_adapter::toResult(err);
+        log.warn("Error '%s' reading nvs", toString(r).c_str());
+        nvs_close(handle);
+        return r;
     }
 
     out.clear();
@@ -72,10 +84,10 @@ bool CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
         out.push_back(c);
     }
 
-    return true;
+    return Result::Ok;
 }
 
-bool CredentialStore::saveAll(const std::vector<WiFiCredential> &entries) {
+common::Result CredentialStore::saveAll(const std::vector<WiFiCredential> &entries) {
     log.debug("saveAll");
     // Compute size
     size_t size = 0;
@@ -102,18 +114,21 @@ bool CredentialStore::saveAll(const std::vector<WiFiCredential> &entries) {
 
     nvs_handle_t handle;
     esp_err_t err = nvs_open(ns, NVS_READWRITE, &handle);
-    if (err != ESP_OK)
-        return false;
+    if (err != ESP_OK) {
+        Result r = esp_adapter::toResult(err);
+        log.warn("Error '%s' opening nvs", r);
+        return r;
+    }
 
     err = nvs_set_blob(handle, "entries", buf.data(), size);
     if (err == ESP_OK)
         err = nvs_commit(handle);
 
     nvs_close(handle);
-    return err == ESP_OK;
+    return Result::Ok;
 }
 
-bool CredentialStore::add(const WiFiCredential &entry) {
+common::Result CredentialStore::add(const WiFiCredential &entry) {
     log.debug("add");
     std::vector<WiFiCredential> entries;
     loadAll(entries);
@@ -130,7 +145,7 @@ bool CredentialStore::add(const WiFiCredential &entry) {
     return saveAll(entries);
 }
 
-bool CredentialStore::erase(const std::string &ssid) {
+common::Result CredentialStore::erase(const std::string &ssid) {
     log.debug("erase");
     std::vector<WiFiCredential> entries;
     loadAll(entries);
@@ -142,26 +157,27 @@ bool CredentialStore::erase(const std::string &ssid) {
     return saveAll(entries);
 }
 
-bool CredentialStore::clear() {
+common::Result CredentialStore::clear() {
     log.debug("clear");
     nvs_handle_t handle;
     esp_err_t err = nvs_open(ns, NVS_READWRITE, &handle);
     if (err != ESP_OK)
-        return false;
+        return esp_adapter::toResult(err);
 
     err = nvs_erase_key(handle, "entries");
     if (err == ESP_OK)
         err = nvs_commit(handle);
 
     nvs_close(handle);
-    return err == ESP_OK;
+    return common::Result::Ok;
 }
 
-bool CredentialStore::store(const WiFiCredential &cred) {
+common::Result CredentialStore::store(const WiFiCredential &cred) {
     log.debug("store");
     std::vector<WiFiCredential> list;
-    if (!loadAll(list)) {
-        return false;
+	Result r = loadAll(list);
+    if (r != Result::Ok) {
+        return r;
     }
 
     // Update if SSID already exists

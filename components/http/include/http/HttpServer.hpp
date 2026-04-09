@@ -1,26 +1,30 @@
 #pragma once
 
-#include <string>
 #include "esp_http_server.h"
 #include "http/HttpHandler.hpp"
+#include "http/HttpMethod.hpp"
+
+#include <string>
 
 namespace http {
 
 class HttpServer {
-public:
+  public:
     HttpServer();
     ~HttpServer();
 
     void start();
     void stop();
 
-    void addRoute(const std::string& path, HttpHandler* handler);
+    void addGetRoute(const std::string &path, HttpHandler *handler);
+	void addPostRoute(const std::string &path, HttpHandler *handler);
+	void addDeleteRoute(const std::string &path, HttpHandler *handler);
+    void addRoute(HttpMethod method, const std::string &pathPattern, HttpHandler *handler);
 
-private:
+  private:
     httpd_handle_t server;
 
-    static esp_err_t handlerAdapter(httpd_req_t* req);
+    static esp_err_t handlerAdapter(httpd_req_t *req);
 };
 
 } // namespace http
-

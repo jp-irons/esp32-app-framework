@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/Result.hpp"
 #include "credential_store/CredentialApiHandler.hpp"
 #include "wifi_manager/WiFiApiHandler.hpp"
 #include "http/HttpHandler.hpp"
@@ -23,7 +24,7 @@ public:
     bool start();
     void stop();
 
-	bool handle(http::HttpRequest& req, http::HttpResponse& res) override;
+	common::Result handle(http::HttpRequest& req, http::HttpResponse& res) override;
 	
 private:
     WiFiContext& ctx;

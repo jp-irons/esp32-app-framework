@@ -4,6 +4,8 @@
 
 namespace static_assets {
 
+using namespace common;
+
 static logger::Logger log{"StaticFileHandler"};
 
 StaticFileHandler::StaticFileHandler(std::string basePath, std::string defaultFile)
@@ -12,7 +14,7 @@ StaticFileHandler::StaticFileHandler(std::string basePath, std::string defaultFi
     , table() // EmbeddedAssetTable has no state, so default construct
 {}
 
-bool StaticFileHandler::handle(http::HttpRequest &request, http::HttpResponse &response) {
+Result StaticFileHandler::handle(http::HttpRequest &request, http::HttpResponse &response) {
     log.debug("handle '%s'", request.path());
 	
 	// TODO review logging - probably over the top.
@@ -25,14 +27,15 @@ bool StaticFileHandler::handle(http::HttpRequest &request, http::HttpResponse &r
     if (!asset) {
         log.warn("Asset not found: %s", resolved.c_str());
         // TODO fix this       response.setStatus(404);
+		response.notFound("Asset not found");
         response.send("Not found");
-        return false;
+        return Result::NotFound;
     }
 
     const char *type = contentTypeForPath(resolved);
     response.setType(type);
     response.send(asset->data, asset->size);
-	return true;
+	return Result::Ok;
 }
 
 std::string StaticFileHandler::resolvePath(std::string_view uri) const {

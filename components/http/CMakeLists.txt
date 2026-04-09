@@ -6,6 +6,7 @@ idf_component_register(
         include
     REQUIRES
         esp_http_server
+        esp_adapter
         common
         logger
 )

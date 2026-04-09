@@ -9,6 +9,8 @@
 #include "wifi_manager/WiFiStateMachine.hpp"
 
 namespace wifi_manager {
+	
+using namespace common;
 
 static logger::Logger log{"ProvisioningServer"};
 
@@ -34,10 +36,12 @@ bool ProvisioningServer::start() {
 
     if (!routesRegistered) {
         log.debug("start() registering routes");
-        server.addRoute("/provision/*", &staticHandler);
-        server.addRoute("/api/framework/credentials/*", &credentialHandler);
-        server.addRoute("/api/framework/wifi/*", &wifiHandler);
-        server.addRoute("/*", &fallbackHandler);
+        server.addGetRoute("/provision/*", &staticHandler);
+		server.addGetRoute("/api/framework/credentials/*", &credentialHandler);
+		server.addPostRoute("/api/framework/credentials/*", &credentialHandler);
+		server.addDeleteRoute("/api/framework/credentials/*", &credentialHandler);
+        server.addGetRoute("/api/framework/wifi/*", &wifiHandler);
+        server.addGetRoute("/*", &fallbackHandler);
 
         routesRegistered = true;
     }
@@ -51,7 +55,7 @@ void ProvisioningServer::stop() {
 }
 
 // handle requests not handled elsewhere
-bool ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
+Result ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
     const std::string &path = req.path();
     log.debug("handle");
 

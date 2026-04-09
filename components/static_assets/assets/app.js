@@ -167,7 +167,7 @@ async function clearCredentials() {
 }
 
 async function clearNvs() {
-  await fetch('/api/framework/nvs/clear', { method: 'POST' });
+  await fetch('/api/framework/credentials/clearNvs', { method: 'POST' });
 }
 
 document.getElementById('btn-clear-creds').onclick = clearCredentials;

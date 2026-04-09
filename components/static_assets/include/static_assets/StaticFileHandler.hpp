@@ -1,26 +1,25 @@
 #pragma once
 
-#include <string>
 #include "http/HttpHandler.hpp"
 #include "static_assets/EmbeddedAssetTable.hpp"
+
+#include <string>
 
 namespace static_assets {
 
 class StaticFileHandler : public http::HttpHandler {
-public:
-    StaticFileHandler(std::string basePath,
-                      std::string defaultFile);
+  public:
+    StaticFileHandler(std::string basePath, std::string defaultFile);
 
-    bool handle(http::HttpRequest& request,
-                http::HttpResponse& response) override;
+    common::Result handle(http::HttpRequest &request, http::HttpResponse &response) override;
 
-private:
+  private:
     std::string base;
     std::string defaultFile;
-    EmbeddedAssetTable table;   // owns its own table
+    EmbeddedAssetTable table; // owns its own table
 
     std::string resolvePath(std::string_view uri) const;
-    static const char* contentTypeForPath(const std::string& path);
+    static const char *contentTypeForPath(const std::string &path);
 };
 
 } // namespace static_assets

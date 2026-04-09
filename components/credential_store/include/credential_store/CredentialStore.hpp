@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/Result.hpp"
 #include <string>
 #include <vector>
 
@@ -17,14 +18,14 @@ public:
 	
 	std::size_t count();
 
-    bool loadAll(std::vector<WiFiCredential>& out);
-    bool saveAll(const std::vector<WiFiCredential>& entries);
+    common::Result loadAll(std::vector<WiFiCredential>& out);
+    common::Result saveAll(const std::vector<WiFiCredential>& entries);
 
-    bool add(const WiFiCredential& entry);
-	bool store(const WiFiCredential& cred);
+    common::Result add(const WiFiCredential& entry);
+	common::Result store(const WiFiCredential& cred);
 	std::vector<WiFiCredential> loadAllSortedByPriority();
-	bool erase(const std::string& ssid);
-	bool clear();
+	common::Result erase(const std::string& ssid);
+	common::Result clear();
 
 private:
     const char* ns;

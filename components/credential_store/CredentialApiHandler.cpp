@@ -1,4 +1,5 @@
 #include "credential_store/CredentialApiHandler.hpp"
+#include "common/Result.hpp"
 #include "credential_store/CredentialStore.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
@@ -15,7 +16,7 @@ CredentialApiHandler::CredentialApiHandler(CredentialStore &s)
     log.debug("constructor");
 }
 
-bool CredentialApiHandler::handle(http::HttpRequest& req,
+common::Result CredentialApiHandler::handle(http::HttpRequest& req,
                 http::HttpResponse& res) {
 	log.debug("handle");
     const std::string &path = req.path();
@@ -23,22 +24,27 @@ bool CredentialApiHandler::handle(http::HttpRequest& req,
 	log.debug("action '%s'", action.c_str());
 
     if (action == "list") {
-		log.debug("handleList");
+		log.info("handleList");
         return handleList(res);
     }
-    if (path == "submit") {
-		log.debug("handleSubmit");
+    if (action == "submit") {
+		log.info("handleSubmit");
         return handleSubmit(req, res);
     }
-    if (path == "delete") {
-		log.debug("handleDelete");
+    if (action == "delete") {
+		log.info("handleDelete");
         return handleDelete(req, res);
     }
-    if (path == "clear") {
+    if (action == "clear") {
 		log.debug("handleClear");
         return handleClear(res);
     }
-    return false;
+	if (action == "clearNvs") {
+		log.info("handleClearNvs");
+	    return handleClearNvs(res);
+	}
+	log.error("handle action '%s' unsupported", action.c_str());
+	return common::Result::Unsupported;
 }
 
 std::string CredentialApiHandler::extractAction(const char *uri) {
@@ -50,24 +56,30 @@ std::string CredentialApiHandler::extractAction(const char *uri) {
     return path.substr(pos + 1);
 }
 
-bool CredentialApiHandler::handleList(HttpResponse &res) {
-    res.jsonStatus("not_implemented");
-	return false;
+common::Result CredentialApiHandler::handleList(HttpResponse &res) {
+	res.jsonStatus("not_implemented");
+	return common::Result::Unsupported;
 }
 
-bool CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &res) {
+common::Result CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &res) {
     res.jsonStatus("not_implemented");
-	return false;
+	return common::Result::Unsupported;
 }
 
-bool CredentialApiHandler::handleDelete(const HttpRequest &req, HttpResponse &res) {
+common::Result CredentialApiHandler::handleDelete(const HttpRequest &req, HttpResponse &res) {
     res.jsonStatus("not_implemented");
-	return false;
+	return common::Result::Unsupported;
 }
 
-bool CredentialApiHandler::handleClear(HttpResponse &res) {
+common::Result CredentialApiHandler::handleClear(HttpResponse &res) {
+	log.info("Clearing all credentials");
+	store.clear();
+	return res.jsonStatus("ok");
+}
+
+common::Result CredentialApiHandler::handleClearNvs(HttpResponse &res) {
     res.jsonStatus("not_implemented");
-	return false;
+	return common::Result::Unsupported;
 }
 
 } // namespace core_api

@@ -65,7 +65,7 @@ class WiFiInterface {
     void onSTADisconnected(uint8_t reason);
 	static WiFiAuthMode toAuthMode(wifi_auth_mode_t mode);
 	wifi_mode_t computeMode() const;
-	bool setStaState(bool enable);
+	common::Result setStaState(bool enable);
 
 
 };

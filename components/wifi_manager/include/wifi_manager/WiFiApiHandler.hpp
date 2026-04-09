@@ -1,6 +1,8 @@
 #pragma once
 
+#include "common/Result.hpp"
 #include "http/HttpHandler.hpp"
+
 namespace http {
 class HttpRequest;
 class HttpResponse;
@@ -16,14 +18,14 @@ class WiFiApiHandler : public http::HttpHandler {
   public:
     explicit WiFiApiHandler(wifi_manager::WiFiContext &wifi);
 
-    bool handle(http::HttpRequest &req, http::HttpResponse &res) override;
+    common::Result handle(http::HttpRequest &req, http::HttpResponse &res) override;
 
   private:
     wifi_manager::WiFiContext &wifiCtx;
-    bool handleScan(http::HttpResponse &res);
-    bool handleStatus(http::HttpResponse &res);
-    bool handleConnect(const http::HttpRequest &req, http::HttpResponse &res);
-    bool handleDisconnect(http::HttpResponse &res);
+    common::Result handleScan(http::HttpResponse &res);
+    common::Result handleStatus(http::HttpResponse &res);
+    common::Result handleConnect(const http::HttpRequest &req, http::HttpResponse &res);
+    common::Result handleDisconnect(http::HttpResponse &res);
 	std::string extractAction(const char *uri);
 
 };
