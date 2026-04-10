@@ -12,14 +12,14 @@ enum class Result {
     Unsupported    // Operation not supported
 };
 
-inline std::string toString(Result res) {
+inline const char* toString(Result res) {
     switch (res) {
-        case Result::Ok:     return "Ok";
-        case Result::NotFound:    return "NotFound";
-        case Result::BadRequest:     return "BadRequest";
-        case Result::Forbidden:  return "Forbidden";
-        case Result::InternalError:   return "InternalError";
-        case Result::Unsupported:    return "Unsupported";
+        case Result::Ok:            return "Ok";
+        case Result::NotFound:      return "NotFound";
+        case Result::BadRequest:    return "BadRequest";
+        case Result::Forbidden:     return "Forbidden";
+        case Result::InternalError: return "InternalError";
+        case Result::Unsupported:   return "Unsupported";
     }
     return "Unknown";
 }

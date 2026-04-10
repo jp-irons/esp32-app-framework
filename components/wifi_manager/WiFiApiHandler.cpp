@@ -1,6 +1,5 @@
 #include "wifi_manager/WiFiApiHandler.hpp"
 
-#include "cJSON.h"
 #include "common/Result.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
@@ -8,6 +7,7 @@
 #include "wifi_manager/WiFiContext.hpp"
 #include "wifi_manager/WiFiInterface.hpp"
 
+#include "cJSON.h"
 #include <vector>
 
 using namespace http;
@@ -83,12 +83,13 @@ common::Result WiFiApiHandler::handleScan(HttpResponse &res) {
             cJSON_AddStringToObject(item, "auth", toString(aps[i].auth));
             cJSON_AddItemToArray(root, item);
         }
-        char *json = cJSON_PrintUnformatted(root);
+        char *json_response = cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
-        res.json(json);
+        r = res.json(json_response);
+		cJSON_free(json_response);
     } else {
-        log.warn("result %s", common::toString(r).c_str());
-        res.jsonStatus(common::toString(r).c_str());
+        log.warn("result %s", common::toString(r));
+        res.jsonStatus(common::toString(r));
     }
     return r;
 }

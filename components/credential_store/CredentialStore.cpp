@@ -21,7 +21,7 @@ CredentialStore::CredentialStore(const char *nvsNamespace)
 }
 
 // TODO[CredentialStore::count]: Replace loadAll() with header-only count()
-size_t CredentialStore::count() {
+size_t CredentialStore::count() const {
     std::vector<WiFiCredential> entries;
     Result r = loadAll(entries);
     if (r != Result::Ok) {
@@ -30,13 +30,13 @@ size_t CredentialStore::count() {
     return entries.size();
 }
 
-common::Result CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
+Result CredentialStore::loadAll(std::vector<WiFiCredential> &out) const {
     log.debug("loadAll");
     nvs_handle_t handle;
     esp_err_t err = nvs_open(ns, NVS_READONLY, &handle);
     if (err != ESP_OK) {
         Result r = esp_adapter::toResult(err);
-        log.warn("Error '%s' getting credentials", toString(r).c_str());
+        log.warn("Error '%s' getting credentials", toString(r));
         return r;
     }
 
@@ -44,7 +44,7 @@ common::Result CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
     err = nvs_get_blob(handle, "entries", nullptr, &size);
     if (err != ESP_OK || size == 0) {
         Result r = esp_adapter::toResult(err);
-        log.warn("Error '%s' accessing nvs", toString(r).c_str());
+        log.warn("Error '%s' accessing nvs", toString(r));
         nvs_close(handle);
         return r;
     }
@@ -55,7 +55,7 @@ common::Result CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
 
     if (err != ESP_OK) {
         Result r = esp_adapter::toResult(err);
-        log.warn("Error '%s' reading nvs", toString(r).c_str());
+        log.warn("Error '%s' reading nvs", toString(r));
         nvs_close(handle);
         return r;
     }
@@ -83,11 +83,21 @@ common::Result CredentialStore::loadAll(std::vector<WiFiCredential> &out) {
 
         out.push_back(c);
     }
+    return Result::Ok;
+}
+
+Result CredentialStore::loadAllSortedByPriority(std::vector<WiFiCredential> &out) const {
+    auto res = loadAll(out);
+    if (res != Result::Ok) {
+        return res;
+    }
+
+    std::sort(out.begin(), out.end(), [](auto &a, auto &b) { return a.priority > b.priority; });
 
     return Result::Ok;
 }
 
-common::Result CredentialStore::saveAll(const std::vector<WiFiCredential> &entries) {
+Result CredentialStore::saveAll(const std::vector<WiFiCredential> &entries) {
     log.debug("saveAll");
     // Compute size
     size_t size = 0;
@@ -128,7 +138,7 @@ common::Result CredentialStore::saveAll(const std::vector<WiFiCredential> &entri
     return Result::Ok;
 }
 
-common::Result CredentialStore::add(const WiFiCredential &entry) {
+Result CredentialStore::add(const WiFiCredential &entry) {
     log.debug("add");
     std::vector<WiFiCredential> entries;
     loadAll(entries);
@@ -145,7 +155,7 @@ common::Result CredentialStore::add(const WiFiCredential &entry) {
     return saveAll(entries);
 }
 
-common::Result CredentialStore::erase(const std::string &ssid) {
+Result CredentialStore::erase(const std::string &ssid) {
     log.debug("erase");
     std::vector<WiFiCredential> entries;
     loadAll(entries);
@@ -157,7 +167,7 @@ common::Result CredentialStore::erase(const std::string &ssid) {
     return saveAll(entries);
 }
 
-common::Result CredentialStore::clear() {
+Result CredentialStore::clear() {
     log.debug("clear");
     nvs_handle_t handle;
     esp_err_t err = nvs_open(ns, NVS_READWRITE, &handle);
@@ -169,13 +179,13 @@ common::Result CredentialStore::clear() {
         err = nvs_commit(handle);
 
     nvs_close(handle);
-    return common::Result::Ok;
+    return Result::Ok;
 }
 
-common::Result CredentialStore::store(const WiFiCredential &cred) {
+Result CredentialStore::store(const WiFiCredential &cred) {
     log.debug("store");
     std::vector<WiFiCredential> list;
-	Result r = loadAll(list);
+    Result r = loadAll(list);
     if (r != Result::Ok) {
         return r;
     }

@@ -1,8 +1,7 @@
 #pragma once
-
 #include "common/Result.hpp"
-#include <string>
 #include <vector>
+#include <string>
 
 namespace credential_store {
 
@@ -14,18 +13,29 @@ struct WiFiCredential {
 
 class CredentialStore {
 public:
-    CredentialStore(const char* nvsNamespace = "wifi_creds");
-	
-	std::size_t count();
+    explicit CredentialStore(const char* nvsNamespace = "wifi_creds");
 
-    common::Result loadAll(std::vector<WiFiCredential>& out);
+    // Number of stored credentials (fast path, no allocations)
+    std::size_t count() const;
+
+    common::Result loadAll(std::vector<WiFiCredential>& out) const;
+
+    // Replace entire set atomically
     common::Result saveAll(const std::vector<WiFiCredential>& entries);
 
+    // Add a new credential (fails if SSID exists)
     common::Result add(const WiFiCredential& entry);
-	common::Result store(const WiFiCredential& cred);
-	std::vector<WiFiCredential> loadAllSortedByPriority();
-	common::Result erase(const std::string& ssid);
-	common::Result clear();
+
+    // Insert or update by SSID (idempotent)
+    common::Result store(const WiFiCredential& cred);
+
+	common::Result loadAllSortedByPriority(std::vector<WiFiCredential>& out) const;
+
+    // Remove a credential by SSID
+    common::Result erase(const std::string& ssid);
+
+    // Remove all credentials
+    common::Result clear();
 
 private:
     const char* ns;
