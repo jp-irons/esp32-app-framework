@@ -14,8 +14,9 @@ namespace framework {
 
 class FrameworkContext {
   public:
-    explicit FrameworkContext(const wifi_manager::ApConfig &provisioningApConfig,
-                              std::string rootUri = "/framework/api");
+    explicit FrameworkContext();
+
+    FrameworkContext(const wifi_manager::ApConfig &apConfig, std::string rootUri);
 
     ~FrameworkContext();
 
@@ -27,9 +28,15 @@ class FrameworkContext {
 
     void start();
     void stop();
+	
+	const wifi_manager::ApConfig &getApConfig() const {
+	    return apConfig;
+	}
 
   private:
-  std::string rootUri_;
+	wifi_manager::ApConfig apConfig = {
+	    .ssid = "ESP32 FW Test", .password = "password", .channel = 1, .maxConnections = 4};
+    std::string rootUri_ = "/framework/api";
     // Always-present value types
     wifi_manager::WiFiContext wifiCtx;
     credential_store::CredentialStore credentialStore;
@@ -43,6 +50,8 @@ class FrameworkContext {
     // API handlers
     wifi_manager::WiFiApiHandler *wifiApi = nullptr;
     credential_store::CredentialApiHandler *credentialApi = nullptr;
+
+    void initialize(const wifi_manager::ApConfig& apConfig);
 };
 
 } // namespace framework

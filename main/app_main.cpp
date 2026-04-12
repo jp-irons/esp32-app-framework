@@ -20,8 +20,21 @@ extern "C" void app_main(void) {
 
     // Create the application context (owns everything)
     log.info("bringing system up");
-    log.debug("creating app context");
-    static ApplicationContext app;
+    log.debug("creating fw context");
+	
+	// default constructor with default apConfig and rootUri
+	// can also take 
+	//
+	//	wifi_manager::ApConfig apConfig = {
+	//	    .ssid = "ESP32 FW Test", .password = "password", .channel = 1, .maxConnections = 4};
+	//	std::string rootUri = "/framework/api";
+	//
+	// framework::FrameworkContext fw{apConfig, rootUri};
+	//
+	framework::FrameworkContext fw{};
+
+	ApplicationContext app{fw};
+	app.start();
     app.start();
     log.info("System initialised");
 

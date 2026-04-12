@@ -27,6 +27,7 @@ ProvisioningServer::ProvisioningServer(WiFiContext &ctx
 }
 
 ProvisioningServer::~ProvisioningServer() {
+	log.info("destructor");
     stop();
 }
 

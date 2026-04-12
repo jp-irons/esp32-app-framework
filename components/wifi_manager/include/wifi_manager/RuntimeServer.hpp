@@ -10,6 +10,7 @@ struct WiFiContext;
 class RuntimeServer {
   public:
     explicit RuntimeServer(WiFiContext &ctx);
+	~ RuntimeServer();
 
     bool start(); // start HTTP server
     void stop(); // stop HTTP server

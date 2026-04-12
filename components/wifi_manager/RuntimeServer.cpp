@@ -15,6 +15,11 @@ RuntimeServer::RuntimeServer(WiFiContext &ctx)
     log.debug("constructor");
 }
 
+RuntimeServer::~RuntimeServer() {
+    log.info("destructor");
+    stop();
+}
+
 bool RuntimeServer::start() {
     if (server) {
         log.warn("Runtime server already running");

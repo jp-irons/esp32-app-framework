@@ -1,7 +1,6 @@
 #include "framework/FrameworkContext.hpp"
 
 #include "credential_store/CredentialApiHandler.hpp"
-#include "credential_store/CredentialStore.hpp"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "logger/Logger.hpp"
@@ -14,13 +13,24 @@
 
 namespace framework {
 
+static constexpr const char *DEFAULT_ROOT_URI = "/framework/api";
+
 static logger::Logger log{"FrameworkContext"};
 
-FrameworkContext::FrameworkContext(
-	const wifi_manager::ApConfig& apConfig, 
-	std::string rootUri)
-    : rootUri_(std::move(rootUri)) {
+FrameworkContext::FrameworkContext() {
+    log.debug("constructor default apConfig and rootUri");
+    initialize(apConfig);
+}
+
+FrameworkContext::FrameworkContext(const wifi_manager::ApConfig &apConfig, std::string rootUri)
+    : apConfig(apConfig)
+    , rootUri_(std::move(rootUri)) {
     log.debug("constructor");
+    initialize(apConfig);
+}
+
+void FrameworkContext::initialize(const wifi_manager::ApConfig &apConfig) {
+    log.debug("initializing framework context with root: {}", rootUri_.c_str());
 
     // 1. Initialize NVS
     log.debug("nvs_flash_init");
@@ -39,34 +49,36 @@ FrameworkContext::FrameworkContext(
     log.debug("init netif");
     ESP_ERROR_CHECK(esp_netif_init());
 
+    // 4. Populate wifiCtx with config and core pointers
     log.debug("AP SSID %s", apConfig.ssid.c_str());
     wifiCtx.apConfig = apConfig;
+    wifiCtx.rootUri = rootUri_;
     wifiCtx.credentialStore = &credentialStore;
-	wifiCtx.rootUri = rootUri_;
+
+    // 5. Ensure credential store is ready before anything uses it
+    //    credentialStore.loadAll();   // or initialize(), if you have one
+
+    // 6. Create state machine first (so it exists before any events)
+    wifiStateMachine = new wifi_manager::WiFiStateMachine(wifiCtx);
+    wifiCtx.stateMachine = wifiStateMachine;
+
+    // 7. Create API handlers
     wifiApi = new wifi_manager::WiFiApiHandler(wifiCtx);
     credentialApi = new credential_store::CredentialApiHandler(credentialStore);
 
-    // 2. Create servers (AP + Runtime HTTP)
+    // 8. Create servers
     provisioningServer = new wifi_manager::ProvisioningServer(wifiCtx, *wifiApi, *credentialApi);
-
     runtimeServer = new wifi_manager::RuntimeServer(wifiCtx);
     wifiCtx.provisioningServer = provisioningServer;
     wifiCtx.runtimeServer = runtimeServer;
 
-    // 3. Create WiFiInterface
+    // 9. Create WiFiInterface LAST (this registers event handlers and may trigger events)
     wifiInterface = new wifi_manager::WiFiInterface(wifiCtx);
     wifiCtx.wifiInterface = wifiInterface;
-
-    // 4. Create WiFiStateMachine
-    wifiStateMachine = new wifi_manager::WiFiStateMachine(wifiCtx);
-    wifiCtx.stateMachine = wifiStateMachine;
-
-    // 5. Create API handlers
-    wifiApi = new wifi_manager::WiFiApiHandler(wifiCtx);
-    credentialApi = new credential_store::CredentialApiHandler(credentialStore);
 }
 
 FrameworkContext::~FrameworkContext() {
+    log.info("destructor");
     stop();
     delete provisioningServer;
     delete runtimeServer;
