@@ -24,6 +24,9 @@ struct WiFiContext {
 
     ApConfig apConfig;
     StaConfig currentStaConfig;
+	
+	std::string rootUri;
+
 };
 
 } // namespace wifi_manager

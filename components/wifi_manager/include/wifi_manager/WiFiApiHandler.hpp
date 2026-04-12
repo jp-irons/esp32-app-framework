@@ -26,7 +26,6 @@ class WiFiApiHandler : public http::HttpHandler {
     common::Result handleStatus(http::HttpResponse &res);
     common::Result handleConnect(const http::HttpRequest &req, http::HttpResponse &res);
     common::Result handleDisconnect(http::HttpResponse &res);
-	std::string extractAction(const char *uri);
 
 };
 

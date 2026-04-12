@@ -9,38 +9,40 @@
 #include "wifi_manager/WiFiStateMachine.hpp"
 
 namespace wifi_manager {
-	
+
 using namespace common;
 
 static logger::Logger log{"ProvisioningServer"};
 
-ProvisioningServer::ProvisioningServer(WiFiContext &ctx)
+ProvisioningServer::ProvisioningServer(WiFiContext &ctx
+	, WiFiApiHandler &wifiApi
+	, credential_store::CredentialApiHandler &credentialApi)
     : ctx(ctx)
     , server()
-    // TODO sort this out properly?
     , staticHandler("/provision", "index.html")
     , fallbackHandler("/", "index.html")
-    , wifiHandler(ctx)
-    , credentialHandler(*ctx.credentialStore) {
-		log.debug("constructor");
-	}
+    , wifiHandler(wifiApi)
+    , credentialHandler(credentialApi) {
+    log.debug("constructor");
+}
 
 ProvisioningServer::~ProvisioningServer() {
     stop();
 }
 
 bool ProvisioningServer::start() {
-	log.info("Starting ProvisioningServer");
+    log.info("Starting ProvisioningServer");
 
     server.start();
 
     if (!routesRegistered) {
         log.debug("start() registering routes");
         server.addGetRoute("/provision/*", &staticHandler);
-		server.addGetRoute("/api/framework/credentials/*", &credentialHandler);
-		server.addPostRoute("/api/framework/credentials/*", &credentialHandler);
-		server.addDeleteRoute("/api/framework/credentials/*", &credentialHandler);
-        server.addGetRoute("/api/framework/wifi/*", &wifiHandler);
+        server.addGetRoute(ctx.rootUri + "/credentials/*", &credentialHandler);
+        server.addPostRoute(ctx.rootUri + "/credentials/*", &credentialHandler);
+        server.addDeleteRoute(ctx.rootUri + "/credentials/*", &credentialHandler);
+        server.addGetRoute(ctx.rootUri + "/wifi/*", &wifiHandler);
+		server.addGetRoute(ctx.rootUri + "/provision/*", this);
         server.addGetRoute("/*", &fallbackHandler);
 
         routesRegistered = true;
@@ -57,8 +59,15 @@ void ProvisioningServer::stop() {
 // handle requests not handled elsewhere
 Result ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
     const std::string &path = req.path();
-    log.debug("handle");
+	log.debug("handle");
+	std::string action = extractAction(req.path());
+	log.debug("action '%s'", action.c_str());
 
+//	if (action == "status") {
+//	    log.debug("action status matched");
+//	    return handleStatus(res);
+//	}
+//
     //    if (path == "/provision/status") {
     //        return handleStatus(req, res);
     //    }

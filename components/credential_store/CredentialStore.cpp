@@ -33,13 +33,16 @@ size_t CredentialStore::count() const {
 Result CredentialStore::loadAll(std::vector<WiFiCredential> &out) const {
     log.debug("loadAll");
     nvs_handle_t handle;
-    esp_err_t err = nvs_open(ns, NVS_READONLY, &handle);
-    if (err != ESP_OK) {
-        Result r = esp_adapter::toResult(err);
-        log.warn("Error '%s' getting credentials", toString(r));
-        return r;
-    }
-
+	esp_err_t err = nvs_open(ns, NVS_READONLY, &handle);
+	if (err == ESP_ERR_NVS_NOT_FOUND) {
+	    log.debug("CredentialStore: namespace '%s' not found (empty store)", ns);
+	    return Result::Ok;
+	}
+	if (err != ESP_OK) {
+	    Result r = esp_adapter::toResult(err);
+	    log.warn("Error '%s' opening namespace", toString(r));
+	    return r;
+	}
     size_t size = 0;
     err = nvs_get_blob(handle, "entries", nullptr, &size);
     if (err == ESP_ERR_NVS_NOT_FOUND) {

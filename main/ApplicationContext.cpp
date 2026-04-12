@@ -4,6 +4,19 @@
 
 static logger::Logger log{"ApplicationContext"};
 
+// TODO is this correct - perhaps needs revisiting
+// rootUri must be configured so that Framework and app.js match
+// app.js currently expects /framework/api
+// ApplicationContext::ApplicationContext()
+// apConfig is required
+// rootUri is optional. 
+// Without rootUri framework will be configured under /framework/api
+// 		ApplicationContext::ApplicationContext()
+//    		: framework(apConfig) 
+// vs
+// 		ApplicationContext::ApplicationContext()
+//    		: framework(apConfig, '/myrooturi') 
+//
 ApplicationContext::ApplicationContext()
     : framework(apConfig) {
     log.debug("constructor");

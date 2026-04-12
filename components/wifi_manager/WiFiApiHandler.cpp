@@ -1,5 +1,6 @@
 #include "wifi_manager/WiFiApiHandler.hpp"
 
+#include "cJSON.h"
 #include "common/Result.hpp"
 #include "http/HttpRequest.hpp"
 #include "http/HttpResponse.hpp"
@@ -7,7 +8,6 @@
 #include "wifi_manager/WiFiContext.hpp"
 #include "wifi_manager/WiFiInterface.hpp"
 
-#include "cJSON.h"
 #include <vector>
 
 using namespace http;
@@ -32,10 +32,10 @@ common::Result WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse
         log.debug("action scan matched");
         return handleScan(res);
     }
-    //    if (path == "/api/wifi/status") {
-    //        handleStatus(res);
-    //        return;
-    //    }
+    if (action == "status") {
+        log.debug("action scan matched");
+        return handleStatus(res);
+    }
     //    if (path == "/api/wifi/connect") {
     //        handleConnect(req, res);
     //        return true;
@@ -46,15 +46,6 @@ common::Result WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse
     //    }
     //
     return common::Result::NotFound;
-}
-
-std::string WiFiApiHandler::extractAction(const char *uri) {
-    std::string path(uri);
-    auto pos = path.find_last_of('/');
-    if (pos == std::string::npos || pos == path.length() - 1) {
-        return {}; // no action found
-    }
-    return path.substr(pos + 1);
 }
 
 static void formatBssid(const uint8_t bssid[6], char out[18]) {
@@ -86,7 +77,7 @@ common::Result WiFiApiHandler::handleScan(HttpResponse &res) {
         char *json_response = cJSON_PrintUnformatted(root);
         cJSON_Delete(root);
         r = res.sendJson(json_response);
-		cJSON_free(json_response);
+        cJSON_free(json_response);
     } else {
         log.warn("result %s", common::toString(r));
         res.sendJsonStatus(common::toString(r));
@@ -95,8 +86,10 @@ common::Result WiFiApiHandler::handleScan(HttpResponse &res) {
 }
 
 common::Result WiFiApiHandler::handleStatus(HttpResponse &res) {
-    res.sendJsonStatus("not_implemented");
-    return common::Result::Unsupported;
+	log.debug("handleStatus");
+	static const char* msg =
+	    "{\"state\":\"UNKNOWN\",\"connected\":false,\"ssid\":\"\",\"lastErrorReason\":0}";
+	return res.sendJson(msg);
 }
 
 common::Result WiFiApiHandler::handleConnect(const HttpRequest &req, HttpResponse &res) {

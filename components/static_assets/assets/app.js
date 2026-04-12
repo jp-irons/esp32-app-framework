@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Fetch /scan and populate UI
 async function loadScanResults() {
   try {
-    const res = await fetch('/api/framework/wifi/scan');
+    const res = await fetch('/framework/api/wifi/scan');
     const networks = await res.json();
 
     window._scanResults = networks;
@@ -84,7 +84,7 @@ async function submitProvisioning() {
   const payload = buildProvisioningPayload();
 
   try {
-    const res = await fetch('/api/framework/credentials/submit', {
+    const res = await fetch('/framework/api/credentials/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -103,7 +103,7 @@ async function submitProvisioning() {
 // Poll /status every second
 async function pollStatus() {
   try {
-    const res = await fetch('/api/framework/provision/status');
+    const res = await fetch('/framework/api/wifi/status');
     const status = await res.json();
 
     const el = document.getElementById('status');
@@ -125,7 +125,7 @@ function startStatusPolling() {
 }
 
 async function fetchCredentials() {
-  const res = await fetch('/api/framework/credentials/list');
+  const res = await fetch('/framework/api/credentials/list');
   const creds = await res.json();
   renderCredList(creds);
 }
@@ -157,17 +157,17 @@ function renderCredList(creds) {
 }
 
 async function deleteCredential(ssid) {
-  await fetch(`/api/framework/credentials/${encodeURIComponent(ssid)}`, { method: 'DELETE' });
+  await fetch(`/framework/api/credentials/${encodeURIComponent(ssid)}`, { method: 'DELETE' });
   await fetchCredentials();
 }
 
 async function clearCredentials() {
-  await fetch('/api/framework/credentials/clear', { method: 'POST' });
+  await fetch('/framework/api/credentials/clear', { method: 'POST' });
   await fetchCredentials();
 }
 
 async function clearNvs() {
-  await fetch('/api/framework/credentials/clearNvs', { method: 'POST' });
+  await fetch('/framework/api/credentials/clearNvs', { method: 'POST' });
 }
 
 document.getElementById('btn-clear-creds').onclick = clearCredentials;
