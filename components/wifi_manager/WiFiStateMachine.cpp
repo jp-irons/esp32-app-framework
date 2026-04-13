@@ -87,13 +87,15 @@ void WiFiStateMachine::onStaConnecting() {
 
 void WiFiStateMachine::onStaConnected() {
     log.debug("onStaConnected");
-    if (currentState == WiFiState::PROVISIONING_TEST_STA) {
+    if (currentState == WiFiState::PROVISIONING_TEST_STA ||
+	       currentState == WiFiState::STA_CONNECTING) {
         transitionTo(WiFiState::STA_CONNECTED);
     }
 }
 
 void WiFiStateMachine::onStaGotIp(const ip_event_got_ip_t *ip) {
     log.debug("onStaGotIp");
+	log.debug("onStaGotIp - Current State %s ", toString(currentState));
     if (currentState == WiFiState::PROVISIONING_TEST_STA || currentState == WiFiState::STA_CONNECTED) {
         transitionTo(WiFiState::GOT_IP);
     }
