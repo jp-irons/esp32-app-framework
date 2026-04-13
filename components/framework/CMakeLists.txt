@@ -10,4 +10,5 @@ idf_component_register(
         logger
         static_assets
         wifi_manager
+        wifi_types
 )

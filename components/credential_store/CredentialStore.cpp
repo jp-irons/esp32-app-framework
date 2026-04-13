@@ -9,9 +9,10 @@
 #include <algorithm>
 #include <cstring>
 
-using namespace common;
-
 namespace credential_store {
+
+using namespace common;
+using namespace wifi_types;
 
 static logger::Logger log{"CredentialStore"};
 
@@ -227,6 +228,19 @@ Result CredentialStore::store(const WiFiCredential &cred) {
               [](const WiFiCredential &a, const WiFiCredential &b) { return a.priority < b.priority; });
 
     return saveAll(list);
+}
+
+std::optional<WiFiCredential> CredentialStore::getByIndex(std::size_t index) const {
+    std::vector<WiFiCredential> all;
+    if (loadAllSortedByPriority(all)!=Result::Ok) {
+        return std::nullopt;
+    }
+
+    if (index >= all.size()) {
+        return std::nullopt;
+    }
+
+    return all[index];
 }
 
 } // namespace credential_store

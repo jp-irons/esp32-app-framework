@@ -1,8 +1,7 @@
 #pragma once
 
-#include "credential_store/CredentialStore.hpp"
+#include "wifi_types/WiFiTypes.hpp"
 #include "esp_netif_types.h"
-#include "WiFiTypes.hpp"
 
 //namespace credential_store {
 //class CredentialStore;
@@ -32,36 +31,36 @@ class WiFiStateMachine {
     void onStaConnecting();
     void onStaConnected();
     void onStaGotIp(const ip_event_got_ip_t *ip);
-    void onStaDisconnected(WiFiError reason);
+    void onStaDisconnected(wifi_types::WiFiError reason);
 
     // Provisioning events
     void onProvisioningRequestReceived();
-    void onProvisioningCredentialsReceived(const credential_store::WiFiCredential &creds);
+    void onProvisioningCredentialsReceived(const wifi_types::WiFiCredential &creds);
     void onProvisioningTestResult(bool success);
 
     // Errors
-    void onError(WiFiError error);
+    void onError(wifi_types::WiFiError error);
     void startRuntime();
     void reset();
 
-	WiFiState getState() const;
+	wifi_types::WiFiState getState() const;
 	size_t getCredentialIndex() const;
 	std::string getCurrentSSID() const;
 	
   private:
-    void transitionTo(WiFiState newState);
-
-  private:
     WiFiContext &ctx;
 	WiFiInterface* wifi = nullptr;
 
-    WiFiState currentState = WiFiState::UNINITIALISED;
-    size_t currentCredentialIndex = 0;
-	credential_store::WiFiCredential* currentCredential = nullptr;
-
-    credential_store::WiFiCredential getCredential(size_t index) const;
+    wifi_types::WiFiState currentState = wifi_types::WiFiState::UNINITIALISED;
+	wifi_types::WiFiError error = wifi_types::WiFiError::NONE;
 	
-	void enterState(WiFiState newState);
+    size_t currentCredentialIndex = 0;
+	wifi_types::WiFiCredential* currentCredential = nullptr;
+
+    wifi_types::WiFiCredential getCredential(size_t index) const;
+	
+	void transitionTo(wifi_types::WiFiState newState);
+    void enterState(wifi_types::WiFiState newState);
 	void tryNextCredential();
 	void startProvisioningAp();
 	void startProvisioningTestSta();

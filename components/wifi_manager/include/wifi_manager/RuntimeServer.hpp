@@ -1,32 +1,37 @@
 #pragma once
 
-#include "esp_http_server.h"
-#include "wifi_manager/WiFiContext.hpp"
+#include "credential_store/CredentialApiHandler.hpp"
+#include "http/HttpServer.hpp"
+#include "static_assets/StaticFileHandler.hpp"
+#include "wifi_manager/WiFiApiHandler.hpp"
 
 namespace wifi_manager {
 
 struct WiFiContext;
 
-class RuntimeServer {
+class RuntimeServer : public http::HttpHandler  {
   public:
-    explicit RuntimeServer(WiFiContext &ctx);
-	~ RuntimeServer();
+    explicit RuntimeServer(WiFiContext &ctx, WiFiApiHandler &wifiApi,
+                           credential_store::CredentialApiHandler &credentialApi);
+    ~RuntimeServer();
 
     bool start(); // start HTTP server
     void stop(); // stop HTTP server
 
+	common::Result handle(http::HttpRequest &req, http::HttpResponse &res) override;
+
   private:
-    WiFiContext &ctx; // non-owning shared state
-    httpd_handle_t server; // HTTP server instance
 
-    bool registerHandlers();
+	WiFiContext &ctx;
 
-    // Static HTTP handlers
-    static esp_err_t handleRoot(httpd_req_t *req);
-    static esp_err_t handleInfo(httpd_req_t *req);
+	http::HttpServer server;
+	static_assets::StaticFileHandler staticHandler;
+	static_assets::StaticFileHandler fallbackHandler;
+	wifi_manager::WiFiApiHandler wifiHandler;
+	credential_store::CredentialApiHandler credentialHandler;
 
-    // Helper to extract instance pointer
-    static RuntimeServer *fromReq(httpd_req_t *req);
+	bool routesRegistered = false;
+	
 };
 
 } // namespace wifi_manager

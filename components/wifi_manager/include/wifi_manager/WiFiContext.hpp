@@ -1,8 +1,12 @@
 #pragma once
 
-#include "wifi_manager/WiFiTypes.hpp"
+#include "wifi_types/WiFiTypes.hpp"
 namespace credential_store {
 class CredentialStore;
+}
+
+namespace wifi_types {
+enum class WiFiState;
 }
 
 namespace wifi_manager {
@@ -12,8 +16,6 @@ class WiFiStateMachine;
 class ProvisioningServer;
 class RuntimeServer;
 
-enum class WiFiState;
-
 struct WiFiContext {
     ProvisioningServer *provisioningServer = nullptr;
     RuntimeServer *runtimeServer = nullptr;
@@ -22,8 +24,8 @@ struct WiFiContext {
     WiFiInterface *wifiInterface = nullptr;
     WiFiStateMachine *stateMachine = nullptr;
 
-    ApConfig apConfig;
-    StaConfig currentStaConfig;
+    wifi_types::ApConfig apConfig;
+    wifi_types::WiFiCredential currentWiFiCred;
 	
 	std::string rootUri;
 

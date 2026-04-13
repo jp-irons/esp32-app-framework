@@ -1,15 +1,11 @@
 #pragma once
 #include "common/Result.hpp"
+#include "wifi_types/WiFiTypes.hpp"
+#include <optional>
 #include <vector>
 #include <string>
 
 namespace credential_store {
-
-struct WiFiCredential {
-    std::string ssid;
-    std::string password;
-    int priority = 0;
-};
 
 class CredentialStore {
 public:
@@ -18,24 +14,26 @@ public:
     // Number of stored credentials (fast path, no allocations)
     std::size_t count() const;
 
-    common::Result loadAll(std::vector<WiFiCredential>& out) const;
+    common::Result loadAll(std::vector<wifi_types::WiFiCredential>& out) const;
 
     // Replace entire set atomically
-    common::Result saveAll(const std::vector<WiFiCredential>& entries);
+    common::Result saveAll(const std::vector<wifi_types::WiFiCredential>& entries);
 
     // Add a new credential (fails if SSID exists)
-    common::Result add(const WiFiCredential& entry);
+    common::Result add(const wifi_types::WiFiCredential& entry);
 
     // Insert or update by SSID (idempotent)
-    common::Result store(const WiFiCredential& cred);
+    common::Result store(const wifi_types::WiFiCredential& cred);
 
-	common::Result loadAllSortedByPriority(std::vector<WiFiCredential>& out) const;
+	common::Result loadAllSortedByPriority(std::vector<wifi_types::WiFiCredential>& out) const;
 
     // Remove a credential by SSID
     common::Result erase(const std::string& ssid);
 
     // Remove all credentials
     common::Result clear();
+	
+	std::optional<wifi_types::WiFiCredential> getByIndex(std::size_t index) const;
 
 private:
     const char* ns;

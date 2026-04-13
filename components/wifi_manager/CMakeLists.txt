@@ -3,9 +3,9 @@ idf_component_register(
         ProvisioningServer.cpp
         RuntimeServer.cpp
         WiFiApiHandler.cpp
+        WiFiHelper.cpp
         WiFiInterface.cpp
         WiFiStateMachine.cpp
-        WiFiTypes.cpp
     INCLUDE_DIRS
         include
    REQUIRES
@@ -20,4 +20,5 @@ idf_component_register(
         http
         logger
         static_assets
+        wifi_types
 )

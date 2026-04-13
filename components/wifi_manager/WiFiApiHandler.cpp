@@ -10,9 +10,10 @@
 
 #include <vector>
 
-using namespace http;
-
 namespace wifi_manager {
+
+using namespace http;
+using namespace wifi_types;
 
 static logger::Logger log{"WiFiApiHandler"};
 

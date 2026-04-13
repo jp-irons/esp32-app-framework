@@ -1,5 +1,6 @@
 #include "wifi_manager/WiFiInterface.hpp"
 
+#include "../wifi_types/include/wifi_types/WiFiTypes.hpp"
 #include "common/Result.hpp"
 #include "esp_adapter/EspTypeAdapter.hpp"
 #include "esp_event.h"
@@ -10,12 +11,13 @@
 #include "wifi_manager/ProvisioningServer.hpp"
 #include "wifi_manager/RuntimeServer.hpp"
 #include "wifi_manager/WiFiContext.hpp"
+#include "wifi_manager/WiFiHelper.hpp"
 #include "wifi_manager/WiFiStateMachine.hpp"
-#include "wifi_manager/WiFiTypes.hpp"
 
 namespace wifi_manager {
 	
 using namespace common;
+using namespace wifi_types;
 
 static logger::Logger log{"WiFiInterface"};
 
@@ -66,7 +68,7 @@ void WiFiInterface::stopDriver() {
 void WiFiInterface::startAp(const ApConfig &config) {
     log.info("Starting SoftAP: %s", config.ssid.c_str());
     /*        ***********************   */
-    wifi_config_t ap_cfg = config.toEspConfig();
+    wifi_config_t ap_cfg = wifi_manager::makeApConfig(config);
     bool useOpenAp = false;
 
     if (config.password.empty()) {
@@ -101,23 +103,45 @@ void WiFiInterface::stopAp() {
     currentMode = mode;
 }
 
+wifi_config_t WiFiInterface::makeStaConfig(const wifi_types::WiFiCredential& cred) {
+    wifi_config_t cfg = {};
+    auto& sta = cfg.sta;
+
+    strncpy((char*)sta.ssid, cred.ssid.c_str(), sizeof(sta.ssid));
+    strncpy((char*)sta.password, cred.password.c_str(), sizeof(sta.password));
+
+    // These are safe, modern defaults
+    sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+    sta.pmf_cfg.capable = true;
+    sta.pmf_cfg.required = false;
+
+    return cfg;
+}
+
 /**
  * STA MODE
  */
-void WiFiInterface::connectSta(const StaConfig &cfg) {
-    log.info("Connecting STA to SSID: %s", cfg.ssid.c_str());
+ WiFiStatus WiFiInterface::connectSta(const wifi_types::WiFiCredential& cred) {
+     log.info("Connecting STA to SSID: %s", cred.ssid.c_str());
 
-    wifi_config_t sta_cfg = cfg.toEspConfig();
-    strncpy((char *) sta_cfg.sta.ssid, cfg.ssid.c_str(), sizeof(sta_cfg.sta.ssid));
-    strncpy((char *) sta_cfg.sta.password, cfg.password.c_str(), sizeof(sta_cfg.sta.password));
+     wifi_config_t cfg = makeStaConfig(cred);
 
-    staActive = true;
-    wifi_mode_t mode = computeMode();
-    ESP_ERROR_CHECK(esp_wifi_set_mode(mode));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
-    ESP_ERROR_CHECK(esp_wifi_connect());
-    currentMode = mode;
-}
+     staActive = true;
+     wifi_mode_t mode = computeMode();
+
+     if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK)
+         return WiFiStatus::DriverError;
+
+     if (esp_wifi_set_config(WIFI_IF_STA, &cfg) != ESP_OK)
+         return WiFiStatus::ConfigError;
+
+     if (esp_wifi_connect() != ESP_OK)
+         return WiFiStatus::ConnectError;
+
+     currentMode = mode;
+     return WiFiStatus::Ok;
+ }
+
 
 void WiFiInterface::disconnectSta() {
     log.debug("Disconnecting STA");

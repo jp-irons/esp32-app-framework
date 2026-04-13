@@ -1,8 +1,6 @@
-#include "include/wifi_manager/WiFiTypes.hpp"
+#include "../wifi_types/include/wifi_types/WiFiTypes.hpp"
 
-#include <string>
-
-namespace wifi_manager {
+namespace wifi_types {
 
 const char *toString(WiFiState state) {
     switch (state) {
@@ -47,19 +45,19 @@ const char *toString(WiFiState state) {
 
 const char *toString(WiFiAuthMode auth) {
     switch (auth) {
-        case wifi_manager::WiFiAuthMode::Open:
+        case WiFiAuthMode::Open:
             return "Open";
-        case wifi_manager::WiFiAuthMode::Unknown:
+        case WiFiAuthMode::Unknown:
             return "Unknown";
-        case wifi_manager::WiFiAuthMode::WEP:
+        case WiFiAuthMode::WEP:
             return "WEP";
-        case wifi_manager::WiFiAuthMode::WPA_PSK:
+        case WiFiAuthMode::WPA_PSK:
             return "WPA_PSK";
-        case wifi_manager::WiFiAuthMode::WPA2_PSK:
+        case WiFiAuthMode::WPA2_PSK:
             return "WPA2_PSK";
-        case wifi_manager::WiFiAuthMode::WPA3_PSK:
+        case WiFiAuthMode::WPA3_PSK:
             return "WPA3_PSK";
-        case wifi_manager::WiFiAuthMode::WPA_WPA2_PSK:
+        case WiFiAuthMode::WPA_WPA2_PSK:
             return "WPA_WPA2_PSK";
     }
     return "UNKNOWN";
@@ -97,51 +95,4 @@ const char *toString(WiFiError err) {
     return "UNKNOWN";
 }
 
-std::string toString(uint8_t reason) {
-    return toString(toWiFiError(reason));
-}
-
-WiFiError toWiFiError(uint8_t reason) {
-    switch (reason) {
-
-        // -------------------------
-        // Authentication failures
-        // -------------------------
-        case 2: // WIFI_REASON_AUTH_EXPIRE
-        case 15: // WIFI_REASON_AUTH_FAIL
-            return WiFiError::AUTH_FAILED;
-
-        // -------------------------
-        // AP not found
-        // -------------------------
-        case 201: // WIFI_REASON_NO_AP_FOUND
-            return WiFiError::NO_AP_FOUND;
-
-        // -------------------------
-        // Timeouts / general failures
-        // -------------------------
-        case 4: // WIFI_REASON_ASSOC_EXPIRE
-        case 200: // WIFI_REASON_BEACON_TIMEOUT
-        case 202: // WIFI_REASON_CONNECTION_FAIL
-            return WiFiError::CONNECTION_TIMEOUT;
-
-        // -------------------------
-        // Handshake failures
-        // -------------------------
-        case 204: // WIFI_REASON_HANDSHAKE_TIMEOUT
-            return WiFiError::HANDSHAKE_TIMEOUT;
-
-        // -------------------------
-        // AP kicked us off (normal)
-        // -------------------------
-        case 3: // WIFI_REASON_ASSOC_LEAVE
-            return WiFiError::NONE;
-
-        // -------------------------
-        // Unknown / unhandled
-        // -------------------------
-        default:
-            return WiFiError::UNKNOWN;
-    }
-}
 } // namespace wifi_manager

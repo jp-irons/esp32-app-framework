@@ -6,9 +6,11 @@
 #include "wifi_manager/RuntimeServer.hpp"
 #include "wifi_manager/WiFiContext.hpp"
 #include "wifi_manager/WiFiInterface.hpp"
-#include "wifi_manager/WiFiTypes.hpp"
+#include "wifi_types/WiFiTypes.hpp"
 
 namespace wifi_manager {
+
+using namespace wifi_types;
 
 static logger::Logger log{"WiFiStateMachine"};
 
@@ -26,13 +28,12 @@ WiFiStateMachine::WiFiStateMachine(WiFiContext &ctx)
 void WiFiStateMachine::start() {
     log.debug("start");
     if (currentState != WiFiState::UNINITIALISED) {
-        log.warn("WiFiStateMachine::start() called in state %s",
-                 toString(currentState));
+        log.debug("WiFiStateMachine::start() called in state %s", toString(currentState));
         return;
     }
 
     log.info("Starting WiFiStateMachine");
-    enterState(WiFiState::STARTING);
+    transitionTo(WiFiState::STARTING);
 
     // Initialise WiFi driver
     ctx.wifiInterface->startDriver();
@@ -40,13 +41,12 @@ void WiFiStateMachine::start() {
     // Decide provisioning vs runtime
     if (ctx.credentialStore->count() == 0) {
         log.debug("No credentials found - entering provisioning AP mode");
-        enterState(WiFiState::UNPROVISIONED_AP);
+        transitionTo(WiFiState::UNPROVISIONED_AP);
     } else {
         log.debug("Credentials found -> entering runtime STA mode");
-        enterState(WiFiState::STA_CONNECTING);
+        transitionTo(WiFiState::STA_CONNECTING);
     }
 }
-
 
 void WiFiStateMachine::reset() {
     log.debug("reset");
@@ -87,25 +87,23 @@ void WiFiStateMachine::onStaConnecting() {
 
 void WiFiStateMachine::onStaConnected() {
     log.debug("onStaConnected");
-	if (currentState == WiFiState::PROVISIONING_TEST_STA) {
-	    enterState(WiFiState::STA_CONNECTED);
-	}
+    if (currentState == WiFiState::PROVISIONING_TEST_STA) {
+        transitionTo(WiFiState::STA_CONNECTED);
+    }
 }
 
 void WiFiStateMachine::onStaGotIp(const ip_event_got_ip_t *ip) {
     log.debug("onStaGotIp");
-	if (currentState == WiFiState::PROVISIONING_TEST_STA ||
-	    currentState == WiFiState::STA_CONNECTED)
-	{
-	    enterState(WiFiState::GOT_IP);
-	}
+    if (currentState == WiFiState::PROVISIONING_TEST_STA || currentState == WiFiState::STA_CONNECTED) {
+        transitionTo(WiFiState::GOT_IP);
+    }
 }
 
 void WiFiStateMachine::onStaDisconnected(WiFiError reason) {
     log.debug("onStaDisconnected");
-	if (currentState == WiFiState::PROVISIONING_TEST_STA) {
-	    enterState(WiFiState::STA_CONNECT_FAILED);
-	}
+    if (currentState == WiFiState::PROVISIONING_TEST_STA) {
+        transitionTo(WiFiState::STA_CONNECT_FAILED);
+    }
 }
 
 // ---------------------------------------------------------
@@ -114,14 +112,14 @@ void WiFiStateMachine::onStaDisconnected(WiFiError reason) {
 void WiFiStateMachine::onProvisioningRequestReceived() {
     log.debug("onProvisioningRequestReceived not implemented");
     if (currentState == WiFiState::UNPROVISIONED_AP) {
-        enterState(WiFiState::PROVISIONING);
+        transitionTo(WiFiState::PROVISIONING);
     }
 }
 
-void WiFiStateMachine::onProvisioningCredentialsReceived(const credential_store::WiFiCredential &creds) {
+void WiFiStateMachine::onProvisioningCredentialsReceived(const WiFiCredential &creds) {
     log.debug("onProvisioningCredentialsReceived");
     ctx.credentialStore->store(creds);
-    enterState(WiFiState::PROVISIONING_TEST_STA);
+    transitionTo(WiFiState::PROVISIONING_TEST_STA);
 }
 
 void WiFiStateMachine::onProvisioningTestResult(bool success) {
@@ -150,7 +148,7 @@ std::string WiFiStateMachine::getCurrentSSID() const {
     return currentCredential->ssid; // fill in later
 }
 
-credential_store::WiFiCredential WiFiStateMachine::getCredential(size_t index) const {
+WiFiCredential WiFiStateMachine::getCredential(size_t index) const {
     // delegate to credential store later
     return {};
 }
@@ -158,54 +156,45 @@ credential_store::WiFiCredential WiFiStateMachine::getCredential(size_t index) c
 // ---------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------
-void WiFiStateMachine::enterState(WiFiState newState) {
-	log.debug("enterState");
+void WiFiStateMachine::transitionTo(WiFiState newState) {
+    log.debug("transitionTo");
     if (currentState == newState) {
         return;
     }
-
     log.debug("State transition: %s -> %s", toString(currentState), toString(newState));
-
     currentState = newState;
+    enterState(newState);
+}
 
+void WiFiStateMachine::enterState(WiFiState newState) {
     switch (newState) {
-
         case WiFiState::UNPROVISIONED_AP:
             startProvisioningAp();
             break;
-
         case WiFiState::PROVISIONING:
             // no entry action; triggered by provisioning request
             break;
-
         case WiFiState::PROVISIONING_TEST_STA:
             startProvisioningTestSta();
             break;
-
         case WiFiState::STA_CONNECTING:
             startRuntimeSta();
             break;
-
         case WiFiState::STA_CONNECTED:
             // wait for IP
             break;
-
         case WiFiState::GOT_IP:
             ctx.runtimeServer->start();
             break;
-
         case WiFiState::STA_DISCONNECTED:
             tryNextCredential();
             break;
-
         case WiFiState::STA_CONNECT_FAILED:
-            enterState(WiFiState::FALLBACK_AP);
+            transitionTo(WiFiState::FALLBACK_AP);
             break;
-
         case WiFiState::FALLBACK_AP:
             startProvisioningAp();
             break;
-
         default:
             break;
     }
@@ -215,36 +204,47 @@ void WiFiStateMachine::tryNextCredential() {
     log.debug("tryNextCredential Not Implemented");
 }
 
-void WiFiStateMachine::startProvisioningAp()
-{
+void WiFiStateMachine::startProvisioningAp() {
     log.debug("startProvisioningAp");
 
-    ctx.runtimeServer->stop();          // stop runtime server if running
+    ctx.runtimeServer->stop(); // stop runtime server if running
     ctx.wifiInterface->disconnectSta(); // correct name
-	log.debug("start AP %s", ctx.apConfig.ssid.c_str());
+    log.debug("start AP %s", ctx.apConfig.ssid.c_str());
     ctx.wifiInterface->startAp(ctx.apConfig); // must pass config
     ctx.provisioningServer->start();
 }
 
 void WiFiStateMachine::startProvisioningTestSta() {
     log.debug("startProvisioningTestSta Not Implemented");
-//    ctx.provisioningServer.stop();
-//    ctx.wifiInterface.stopAp();
-//    ctx.wifiInterface.configureSta(ctx.credentialStore.getLatest());
-//    ctx.wifiInterface.startSta();
+    //    ctx.provisioningServer.stop();
+    //    ctx.wifiInterface.stopAp();
+    //    ctx.wifiInterface.configureSta(ctx.credentialStore.getLatest());
+    //    ctx.wifiInterface.startSta();
 }
 
 void WiFiStateMachine::startRuntimeSta() {
-    log.debug("startRuntimeSta Not Implemented");
-//	ctx.provisioningServer.stop();
-//	ctx.wifiInterface->stopAp();
+    log.debug("startRuntimeSta");
 
-	currentCredentialIndex = 0;
-	log.debug("startRuntimeSta Not Implemented");
-//	currentCredential = ctx.credentialStore.getCredential(currentIndex);
-//
-//	ctx.wifiInterface->configureSta(creds);
-//	ctx.wifiInterface.startSta();
+    // 1. Stop provisioning server and AP
+    ctx.provisioningServer->stop();
+    ctx.wifiInterface->stopAp();
+
+    // 2. Select the first (or preferred) credential
+    currentCredentialIndex = 0;
+    auto creds = ctx.credentialStore->getByIndex(currentCredentialIndex);
+    if (!creds) {
+        error = WiFiError::INVALID_CREDENTIALS;
+        log.error("No credentials available for runtime STA");
+        transitionTo(WiFiState::STA_CONNECT_FAILED);
+        return;
+    }
+
+    // 3. Configure STA with selected credentials
+    ctx.wifiInterface->connectSta(*creds);
+
+    // 5. State machine now waits for:
+    //    - WIFI_EVENT_STA_CONNECTED
+    //    - IP_EVENT_STA_GOT_IP
 }
 
 } // namespace wifi_manager

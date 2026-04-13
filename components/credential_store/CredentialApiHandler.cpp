@@ -9,10 +9,11 @@
 
 #include <cJSON.h>
 
+namespace credential_store {
+
 using namespace http;
 using namespace common;
-
-namespace credential_store {
+using namespace wifi_types;
 
 static logger::Logger log{"CredentialApiHandler"};
 

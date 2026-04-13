@@ -1,105 +1,81 @@
 #include "wifi_manager/RuntimeServer.hpp"
 
 #include "logger/Logger.hpp"
+#include "credential_store/CredentialApiHandler.hpp"
+#include "wifi_manager/WiFiApiHandler.hpp"
 #include "wifi_manager/WiFiContext.hpp"
 #include "wifi_manager/WiFiStateMachine.hpp"
-#include "wifi_manager/WiFiTypes.hpp"
 
 namespace wifi_manager {
+	
+using namespace common;
 
 static logger::Logger log{"RuntimeServer"};
 
-RuntimeServer::RuntimeServer(WiFiContext &ctx)
+RuntimeServer::RuntimeServer(WiFiContext &ctx,
+                             WiFiApiHandler &wifiApi,
+                             credential_store::CredentialApiHandler &credentialApi)
     : ctx(ctx)
-    , server(nullptr) {
+    , server()
+    , staticHandler("/", "index.html")
+	, fallbackHandler("/", "index.html")
+    , wifiHandler(wifiApi)
+    , credentialHandler(credentialApi)
+{
     log.debug("constructor");
 }
-
 RuntimeServer::~RuntimeServer() {
     log.info("destructor");
     stop();
 }
 
 bool RuntimeServer::start() {
-    if (server) {
-        log.warn("Runtime server already running");
-        return true;
-    }
+	log.info("Starting RuntimeServer");
 
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = 80;
+	server.start();
 
-    log.info("Starting runtime HTTP server");
+	if (!routesRegistered) {
+	    log.debug("start() registering routes");
+	    server.addGetRoute("/provision/*", &staticHandler);
+	    server.addGetRoute(ctx.rootUri + "/credentials/*", &credentialHandler);
+	    server.addPostRoute(ctx.rootUri + "/credentials/*", &credentialHandler);
+	    server.addDeleteRoute(ctx.rootUri + "/credentials/*", &credentialHandler);
+	    server.addGetRoute(ctx.rootUri + "/wifi/*", &wifiHandler);
+		server.addGetRoute(ctx.rootUri + "/provision/*", this);
+	    server.addGetRoute("/*", &fallbackHandler);
 
-    if (httpd_start(&server, &config) != ESP_OK) {
-        log.error("Failed to start runtime server");
-        server = nullptr;
-        return false;
-    }
+	    routesRegistered = true;
+	}
 
-    return registerHandlers();
+	return true;
 }
 
 void RuntimeServer::stop() {
-    if (server) {
-        log.info("Stopping runtime HTTP server");
-        httpd_stop(server);
-        server = nullptr;
-    }
+	log.debug("Stopping RuntimeServer");
+	server.stop();
 }
 
-bool RuntimeServer::registerHandlers() {
-    httpd_uri_t root = {.uri = "/", .method = HTTP_GET, .handler = handleRoot, .user_ctx = this};
+// handle requests not handled elsewhere
+Result RuntimeServer::handle(http::HttpRequest &req, http::HttpResponse &res) {
+    const std::string &path = req.path();
+	log.debug("handle");
+	std::string action = extractAction(req.path());
+	log.debug("action '%s'", action.c_str());
 
-    httpd_uri_t info = {.uri = "/info", .method = HTTP_GET, .handler = handleInfo, .user_ctx = this};
-
-    if (httpd_register_uri_handler(server, &root) != ESP_OK || httpd_register_uri_handler(server, &info) != ESP_OK) {
-        log.error("Failed to register runtime handlers");
-        return false;
-    }
-
-    return true;
-}
-
-RuntimeServer *RuntimeServer::fromReq(httpd_req_t *req) {
-    return static_cast<RuntimeServer *>(req->user_ctx);
-}
-
-// -------------------------
-// Handlers
-// -------------------------
-
-esp_err_t RuntimeServer::handleRoot(httpd_req_t *req) {
-    const char *html = "<html><body>"
-                       "<h1>Device Runtime</h1>"
-                       "<p><a href=\"/info\">Device Info</a></p>"
-                       "</body></html>";
-
-    httpd_resp_set_type(req, "text/html");
-    httpd_resp_send(req, html, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-esp_err_t RuntimeServer::handleInfo(httpd_req_t *req) {
-    auto *self = fromReq(req);
-    WiFiContext ctx = self->ctx;
-
-    std::string state = toString(ctx.stateMachine->getState());
-    size_t index = ctx.stateMachine->getCredentialIndex();
-    std::string ssid = ctx.stateMachine->getCurrentSSID();
-
-    char json[256];
-    snprintf(json, sizeof(json),
-             "{"
-             "\"state\": %s,"
-             "\"currentCred\": %d,"
-             "\"ssid\": \"%s\""
-             "}",
-             state.c_str(), index, ssid.c_str());
-
-    httpd_resp_set_type(req, "application/json");
-    httpd_resp_send(req, json, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
+//	if (action == "status") {
+//	    log.debug("action status matched");
+//	    return handleStatus(res);
+//	}
+//
+    //    if (path == "/provision/status") {
+    //        return handleStatus(req, res);
+    //    }
+    //
+    //    if (path == "/provision/reset") {
+    //    if (path == "/provision/retry") {
+    //
+    // fallback: serve provisioning UI
+    return staticHandler.handle(req, res);
 }
 
 } // namespace wifi_manager

@@ -74,12 +74,7 @@ Result ProvisioningServer::handle(http::HttpRequest &req, http::HttpResponse &re
     //    }
     //
     //    if (path == "/provision/reset") {
-    //        return handleReset(req, res);
-    //    }
-    //
     //    if (path == "/provision/retry") {
-    //        return handleRetry(req, res);
-    //    }
     //
     // fallback: serve provisioning UI
     return staticHandler.handle(req, res);
