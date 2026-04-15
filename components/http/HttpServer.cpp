@@ -33,6 +33,12 @@ void HttpServer::stop() {
     }
 }
 
+void HttpServer::addRoutes(const std::string &path, HttpHandler *handler) {
+	addGetRoute(path, handler);
+	addPostRoute(path, handler);
+	addDeleteRoute(path, handler);
+}
+
 void HttpServer::addGetRoute(const std::string &path, HttpHandler *handler) {
 	return addRoute(HttpMethod::Get, path, handler);
 }
@@ -47,13 +53,16 @@ void HttpServer::addDeleteRoute(const std::string &path, HttpHandler *handler) {
 
 void HttpServer::addRoute(HttpMethod method, const std::string &path, HttpHandler *handler) {
     log.debug("addRoute %s '%s'", toString(method).c_str(), path.c_str());
-    httpd_uri_t uri = {
-        .uri = path.c_str(), 
-		.method = esp_adapter::toEspIdfMethod(method), 
-		.handler = &HttpServer::handlerAdapter, 
-		.user_ctx = handler};
-
-    httpd_register_uri_handler(server, &uri);
+	
+	
+	ownedPaths.push_back(path);
+	httpd_uri_t uri = {
+	    .uri = ownedPaths.back().c_str(),
+	    .method = esp_adapter::toEspIdfMethod(method),
+	    .handler = &HttpServer::handlerAdapter,
+	    .user_ctx = handler
+	};
+	httpd_register_uri_handler(server, &uri);
 }
 
 esp_err_t HttpServer::handlerAdapter(httpd_req_t *req) {
@@ -62,11 +71,10 @@ esp_err_t HttpServer::handlerAdapter(httpd_req_t *req) {
     http::HttpRequest request(req);
     http::HttpResponse response(req);
     common::Result handlerResp = handler->handle(request, response);
-	esp_err_t espResp = esp_adapter::toEspError(handlerResp);
-	if (espResp != ESP_OK) {
+	if (handlerResp != Result::Ok) {
 		log.error("handlerAdapter fail '%s'", req->uri);
 	}
-    return espResp;
+    return ESP_OK;
 }
 
 } // namespace http

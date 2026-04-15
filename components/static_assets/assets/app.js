@@ -247,7 +247,7 @@ function showConfirm(type, title, message, onConfirm) {
 
 async function confirmReboot() {
   try {
-    const res = await fetch('/api/device/reboot', { method: 'POST' });
+    const res = await fetch('/framework/api/device/reboot', { method: 'POST' });
 
     if (!res.ok) {
       showMessage('error', 'Reboot Failed', 'Unable to reboot device');

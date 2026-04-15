@@ -2,6 +2,7 @@
 
 #include "credential_store/CredentialApiHandler.hpp"
 #include "credential_store/CredentialStore.hpp"
+#include "device/DeviceApiHandler.hpp"
 #include "wifi_manager/WiFiApiHandler.hpp"
 #include "wifi_manager/WiFiContext.hpp"
 //#include "wifi_manager/WiFiApiHandler.hpp"
@@ -50,6 +51,7 @@ class FrameworkContext {
     // API handlers
     wifi_manager::WiFiApiHandler *wifiApi = nullptr;
     credential_store::CredentialApiHandler *credentialApi = nullptr;
+	device::DeviceApiHandler *deviceApi = nullptr;
 
     void initialize(const wifi_types::ApConfig& apConfig);
 };

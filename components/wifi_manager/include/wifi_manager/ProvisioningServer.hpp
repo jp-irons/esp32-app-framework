@@ -2,6 +2,7 @@
 
 #include "common/Result.hpp"
 #include "credential_store/CredentialApiHandler.hpp"
+#include "device/DeviceApiHandler.hpp"
 #include "http/HttpHandler.hpp"
 #include "http/HttpServer.hpp"
 #include "static_assets/StaticFileHandler.hpp"
@@ -18,9 +19,9 @@ struct WiFiContext;
 
 class ProvisioningServer : public http::HttpHandler {
   public:
-    explicit ProvisioningServer(WiFiContext &ctx
-		, WiFiApiHandler &wifiApi
-		, credential_store::CredentialApiHandler &credentialApi);
+    explicit ProvisioningServer(WiFiContext &ctx, WiFiApiHandler &wifiApi,
+                                credential_store::CredentialApiHandler &credentialApi,
+                                device::DeviceApiHandler &deviceApi);
     ~ProvisioningServer();
 
     bool start();
@@ -36,9 +37,9 @@ class ProvisioningServer : public http::HttpHandler {
     static_assets::StaticFileHandler fallbackHandler;
     wifi_manager::WiFiApiHandler wifiHandler;
     credential_store::CredentialApiHandler credentialHandler;
+    device::DeviceApiHandler deviceHandler;
 
     bool routesRegistered = false;
-	
 };
 
 } // namespace wifi_manager

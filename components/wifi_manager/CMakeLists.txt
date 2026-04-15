@@ -17,6 +17,7 @@ idf_component_register(
         cjson
         common
         credential_store
+        device
         http
         logger
         static_assets

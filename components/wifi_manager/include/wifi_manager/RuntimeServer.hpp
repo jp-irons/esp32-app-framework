@@ -4,6 +4,7 @@
 #include "http/HttpServer.hpp"
 #include "static_assets/StaticFileHandler.hpp"
 #include "wifi_manager/WiFiApiHandler.hpp"
+#include "device/DeviceApiHandler.hpp"
 
 namespace wifi_manager {
 
@@ -12,7 +13,8 @@ struct WiFiContext;
 class RuntimeServer : public http::HttpHandler  {
   public:
     explicit RuntimeServer(WiFiContext &ctx, WiFiApiHandler &wifiApi,
-                           credential_store::CredentialApiHandler &credentialApi);
+                           credential_store::CredentialApiHandler &credentialApi,
+						   device::DeviceApiHandler &deviceApi);
     ~RuntimeServer();
 
     bool start(); // start HTTP server
@@ -29,6 +31,7 @@ class RuntimeServer : public http::HttpHandler  {
 	static_assets::StaticFileHandler fallbackHandler;
 	wifi_manager::WiFiApiHandler wifiHandler;
 	credential_store::CredentialApiHandler credentialHandler;
+	device::DeviceApiHandler deviceHandler;
 
 	bool routesRegistered = false;
 	

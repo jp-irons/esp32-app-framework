@@ -1,6 +1,7 @@
 #include "framework/FrameworkContext.hpp"
 
 #include "credential_store/CredentialApiHandler.hpp"
+#include "device/DeviceApiHandler.hpp"
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "logger/Logger.hpp"
@@ -65,10 +66,11 @@ void FrameworkContext::initialize(const wifi_types::ApConfig &apConfig) {
     // 7. Create API handlers
     wifiApi = new wifi_manager::WiFiApiHandler(wifiCtx);
     credentialApi = new credential_store::CredentialApiHandler(credentialStore);
+	deviceApi = new device::DeviceApiHandler();
 
     // 8. Create servers
-    provisioningServer = new wifi_manager::ProvisioningServer(wifiCtx, *wifiApi, *credentialApi);
-    runtimeServer = new wifi_manager::RuntimeServer(wifiCtx, *wifiApi, *credentialApi);
+    provisioningServer = new wifi_manager::ProvisioningServer(wifiCtx, *wifiApi, *credentialApi, *deviceApi);
+    runtimeServer = new wifi_manager::RuntimeServer(wifiCtx, *wifiApi, *credentialApi, *deviceApi);
     wifiCtx.provisioningServer = provisioningServer;
     wifiCtx.runtimeServer = runtimeServer;
 

@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+    	DeviceApiHandler.cpp
+    INCLUDE_DIRS
+        include
+    REQUIRES
+        common
+        http
+        logger
+)
