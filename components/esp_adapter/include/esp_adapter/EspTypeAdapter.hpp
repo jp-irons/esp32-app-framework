@@ -70,4 +70,25 @@ inline httpd_method_t toEspIdfMethod(http::HttpMethod method) {
     return HTTP_GET;
 }
 
+inline http::HttpMethod toHttpMethod(int method) {
+    switch (method) {
+        case HTTP_GET:
+            return http::HttpMethod::Get;
+        case HTTP_POST:
+            return http::HttpMethod::Post;
+        case HTTP_PUT:
+            return http::HttpMethod::Put;
+        case HTTP_DELETE:
+            return http::HttpMethod::Delete;
+        case HTTP_PATCH:
+            return http::HttpMethod::Patch;
+        case HTTP_HEAD:
+            return http::HttpMethod::Head;
+        case HTTP_OPTIONS:
+            return http::HttpMethod::Options;
+		default: 
+			return http::HttpMethod::Get;
+    }
+}
+
 } // namespace esp_adapter

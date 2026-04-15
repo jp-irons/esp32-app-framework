@@ -1,6 +1,8 @@
 #pragma once
 
+#include "esp_adapter/EspTypeAdapter.hpp"
 #include "esp_http_server.h"
+#include "http/HttpMethod.hpp"
 
 #include <string>
 #include <string_view>
@@ -24,6 +26,10 @@ class HttpRequest {
     const char *path() const {
         return req->uri;
     }
+	
+	HttpMethod method() const {
+		return esp_adapter::toHttpMethod(req->method);
+	}
 
     httpd_req_t *raw() const {
         return req;

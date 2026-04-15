@@ -1,4 +1,5 @@
 #include "device/DeviceApiHandler.hpp"
+#include "http/HttpMethod.hpp"
 #include "logger/Logger.hpp"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
@@ -21,37 +22,26 @@ Result DeviceApiHandler::handle(http::HttpRequest& req, http::HttpResponse& res)
     if (action == "reboot") {
         return handleReboot(req, res);
     }
-
-//    // Unknown action
-//    res.setStatus(404);
-//    res.setContentType("application/json");
-//    res.send("{\"error\":\"unknown action\"}");
-    return common::Result::Unsupported;
+	res.sendNotFound404("action '" + action + "' not found");
+    return common::Result::Ok;
 }
 
 common::Result DeviceApiHandler::handleReboot(http::HttpRequest& req, http::HttpResponse& res)
 {
 	log.debug("handleReboot");
-	return common::Result::Unsupported;
-//    // Only allow POST
-//    if (req.method() != http::Method::POST) {
-//        res.setStatus(405);
-//        res.setContentType("application/json");
-//        res.send("{\"error\":\"method not allowed\"}");
-//        return common::Result::Error("Invalid method");
-//    }
-//
-//    // Respond BEFORE rebooting
-//    res.setStatus(200);
-//    res.setContentType("application/json");
-//    res.send("{\"status\":\"rebooting\"}");
-//
-//    // Allow TCP stack to flush
-//    vTaskDelay(pdMS_TO_TICKS(100));
-//
-//    // Reboot the device
-//    esp_restart();
-//
-//    return common::Result::Ok();
+	if (req.method()!= http::HttpMethod::Post) {
+		res.sendJsonError(405, "{\"error\":\"method not allowed\"}");
+	}
+    // Respond BEFORE rebooting
+	res.sendJson("{\"status\":\"rebooting\"}");
+    // Allow TCP stack to flush
+	log.debug("waiting 500ms for TCP stack to flush");
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+	log.info("rebooting device");
+    // Reboot the device
+    esp_restart();
+
+    return common::Result::Ok;
 }
 } // namespace
