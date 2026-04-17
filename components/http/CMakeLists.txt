@@ -8,5 +8,6 @@ idf_component_register(
         esp_http_server
         esp_adapter
         common
+        device
         logger
 )

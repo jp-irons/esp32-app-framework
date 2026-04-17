@@ -5,14 +5,9 @@
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	  <title>ESP32 WiFi Provisioning</title>
 
-	  <script src="/runtime/app.js" defer></script>
+	  <script type="module" src="/runtime/app.js" defer></script>
 	  <link rel="stylesheet" href="/common/styles.css">
 
-	  <script>
-	    document.addEventListener("DOMContentLoaded", () => {
-	      loadScanResults();
-	    });
-	  </script>
 	</head>
 	
 <body class="bg-gray-100 text-gray-900 min-h-screen relative">
@@ -28,27 +23,15 @@
       <ul id="cred-list" class="space-y-2"></ul>
 
       <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-300">
-        <button id="btn-clear-creds"
-                onclick="clearCredentials()"
-                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+        <button id="btn-clear-creds" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
           Clear credentials
         </button>
 
-        <button id="btn-clear-nvs"
-                onclick="clearNvs()"
-                class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
+        <button id="btn-clear-nvs" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
           Clear NVS
         </button>
 
-        <button id="btn-reboot"
-                onclick="showConfirm(
-		  						'danger',
-		  						'Reboot Device',
-		  						'Do you wish to reboot?',
-		  						confirmReboot
-							);
-"
-                class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
+        <button id="btn-reboot" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
           Reboot
         </button>
       </div>
@@ -64,8 +47,7 @@
                class="flex-grow px-3 py-2 border rounded focus:ring focus:ring-blue-300"
                placeholder="Network password" />
 
-        <button onclick="submitProvisioning()"
-                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+        <button id="btn-save" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
           Save
         </button>
       </div>
@@ -80,11 +62,10 @@
     <div class="mt-8 pt-6 border-t border-gray-300">
       <div class="flex justify-between items-center mb-2">
         <h2 class="text-lg font-medium">Available Networks</h2>
-        <button onclick="loadScanResults()"
-                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
-          Refresh
-        </button>
-      </div>
+		<button id="btn-refresh" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+		  Refresh
+		</button>
+	  </div>
 
       <div id="network-list" class="space-y-3">
         <!-- Populated dynamically -->
@@ -100,12 +81,9 @@
     <div class="bg-white rounded shadow-lg p-6 w-80">
       <h2 id="message-modal-title" class="text-lg font-semibold mb-4"></h2>
       <p id="message-modal-message" class="text-sm text-gray-700 mb-6"></p>
-      <div class="flex justify-end">
-        <button onclick="hideMessageModal()"
-                class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">
+	  <button id="message-ok-btn" class="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400">
           OK
-        </button>
-      </div>
+      </button>
     </div>
   </div>
 

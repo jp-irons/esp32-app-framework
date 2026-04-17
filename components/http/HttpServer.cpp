@@ -1,6 +1,7 @@
 #include "common/Result.hpp"
-#include "esp_adapter/EspTypeAdapter.hpp"
 #include "http/HttpServer.hpp"
+
+#include "../device/include/device/EspTypeAdapter.hpp"
 #include "http/HttpMethod.hpp"
 #include "logger/Logger.hpp"
 #include "esp_err.h"

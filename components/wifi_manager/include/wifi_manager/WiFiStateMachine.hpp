@@ -1,5 +1,6 @@
 #pragma once
 
+#include "device/DeferredExecutor.hpp"
 #include "wifi_types/WiFiTypes.hpp"
 #include "esp_netif_types.h"
 
@@ -52,6 +53,7 @@ class WiFiStateMachine {
   private:
     WiFiContext &ctx;
 	WiFiInterface* wifi = nullptr;
+	device::DeferredExecutor defer;
 
     wifi_types::WiFiState currentState = wifi_types::WiFiState::UNINITIALISED;
 	wifi_types::WiFiError error = wifi_types::WiFiError::NONE;

@@ -1,5 +1,6 @@
 idf_component_register(
     SRCS
+    	DeferredExecutor.cpp
     	DeviceApiHandler.cpp
     INCLUDE_DIRS
         include
@@ -7,4 +8,5 @@ idf_component_register(
         common
         http
         logger
+        esp_timer
 )

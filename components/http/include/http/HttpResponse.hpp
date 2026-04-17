@@ -1,10 +1,10 @@
 #pragma once
 #include "common/Result.hpp"
-#include "esp_adapter/EspTypeAdapter.hpp"
 #include "esp_http_server.h"
 
 #include <string>
 #include <string_view>
+#include "../../../device/include/device/EspTypeAdapter.hpp"
 
 // TODO move method defns back from header to cpp
 namespace http {

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "esp_adapter/EspTypeAdapter.hpp"
 #include "esp_http_server.h"
+#include "device/EspTypeAdapter.hpp"
 #include "http/HttpMethod.hpp"
 
 #include <string>

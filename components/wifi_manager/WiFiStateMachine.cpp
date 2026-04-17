@@ -110,10 +110,33 @@ void WiFiStateMachine::onStaGotIp(const ip_event_got_ip_t *ip) {
 
 void WiFiStateMachine::onStaDisconnected(WiFiError reason) {
     log.debug("onStaDisconnected");
-    if (currentState == WiFiState::PROVISIONING_TEST_STA) {
-        transitionTo(WiFiState::STA_CONNECT_FAILED);
-    } else {
-        onUnexpectedEvent("onStaDisconnected()");
+
+    switch (currentState) {
+
+        case WiFiState::PROVISIONING_TEST_STA:
+            // Provisioning test failed
+            transitionTo(WiFiState::STA_CONNECT_FAILED);
+            return;
+
+        case WiFiState::STA_CONNECTING:
+            log.warn("Disconnect during STA_CONNECTING — deferring handling");
+            defer.runAfter(150, [this]() {
+                // After the WiFi driver has settled
+                if (currentState == WiFiState::STA_CONNECTING) {
+                    transitionTo(WiFiState::STA_DISCONNECTED);
+                }
+            });
+            return;
+			
+        case WiFiState::STA_CONNECTED:
+        case WiFiState::GOT_IP:
+            // Lost connection during runtime
+            transitionTo(WiFiState::STA_DISCONNECTED);
+            return;
+
+        default:
+            onUnexpectedEvent("onStaDisconnected()");
+            return;
     }
 }
 
@@ -215,6 +238,7 @@ void WiFiStateMachine::enterState(WiFiState newState) {
 
 void WiFiStateMachine::tryNextCredential() {
     log.debug("tryNextCredential Not Implemented");
+	// TODO work out how to retry and try next credential
 }
 
 void WiFiStateMachine::startProvisioningAp() {

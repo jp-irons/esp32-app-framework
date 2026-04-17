@@ -1,17 +1,69 @@
-export function showModal({ title, message, onConfirm, onCancel }) {
-  const modal = document.getElementById('modal');
-  modal.querySelector('.title').textContent = title;
-  modal.querySelector('.message').textContent = message;
+// common_modal.js
 
-  modal.querySelector('.confirm').onclick = () => {
-    modal.classList.remove('open');
-    onConfirm?.();
-  };
+let confirmCallback = null;
 
-  modal.querySelector('.cancel').onclick = () => {
-    modal.classList.remove('open');
-    onCancel?.();
-  };
+// ----- Confirm Modal -----
 
-  modal.classList.add('open');
+export function showConfirm(type, title, message, onConfirm) {
+    const modal = document.getElementById('confirm-modal');
+    const titleEl = document.getElementById('confirm-modal-title');
+    const msgEl = document.getElementById('confirm-modal-message');
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+
+    // Color coding
+    if (type === 'danger') {
+        titleEl.style.color = '#dc2626';
+    } else if (type === 'warning') {
+        titleEl.style.color = '#d97706';
+    } else {
+        titleEl.style.color = '#111827';
+    }
+
+    confirmCallback = onConfirm;
+    modal.classList.remove('hidden');
+}
+
+export function hideConfirmModal() {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    confirmCallback = null;
+}
+
+export function wireConfirmButtons() {
+    document.getElementById('confirm-cancel-btn').onclick = () => {
+        hideConfirmModal();
+    };
+
+    document.getElementById('confirm-ok-btn').onclick = () => {
+        if (confirmCallback) confirmCallback();
+        hideConfirmModal();
+    };
+}
+
+// ----- Message Modal -----
+
+export function showMessage(type, title, message) {
+    const modal = document.getElementById('message-modal');
+    const titleEl = document.getElementById('message-modal-title');
+    const msgEl = document.getElementById('message-modal-message');
+
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+
+    if (type === 'error') {
+        titleEl.style.color = '#dc2626';
+    } else if (type === 'success') {
+        titleEl.style.color = '#16a34a';
+    } else if (type === 'warning') {
+        titleEl.style.color = '#d97706';
+    } else {
+        titleEl.style.color = '#111827';
+    }
+
+    modal.classList.remove('hidden');
+}
+
+export function hideMessageModal() {
+    document.getElementById('message-modal').classList.add('hidden');
 }

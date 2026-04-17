@@ -1,13 +1,62 @@
+import {
+    showConfirm,
+    hideConfirmModal,
+    wireConfirmButtons,
+    showMessage,
+    hideMessageModal,
+} from "/common/modal.js";
+
+import {
+	rebootDevice
+} from "/common/api.js";
+
 // Global storage for scan results. 
 window._scanResults = [];
 
 let initialLoadDone = false;
 
-document.addEventListener('DOMContentLoaded', () => {
-    if (!initialLoadDone) {
-        initialLoadDone = true;
-        fetchCredentials();
-    }
+document.addEventListener("DOMContentLoaded", () => {
+    wireConfirmButtons();   // from modal.js
+	
+	// Wire message modal ok button
+	document.getElementById("message-ok-btn").onclick = () => {
+	    hideMessageModal();
+	};
+
+	// Wire refresh button
+	document.getElementById("btn-refresh").onclick = () => {
+	    loadScanResults();
+	};
+	// Wire reboot button
+	document.getElementById("btn-reboot").onclick = () => {
+	    showConfirm(
+	        "danger",
+	        "Reboot Device",
+	        "Do you wish to reboot?",
+	        async () => {
+	            try {
+	                await rebootDevice();
+	                showMessage("success", "Rebooting", "Device is rebooting…");
+	                setTimeout(() => location.reload(), 3000);
+	            } catch (err) {
+	                showMessage("error", "Reboot Failed", "Unable to reboot device");
+	            }
+	        }
+	    );
+	};	
+	
+	// Wire clear credentials
+	document.getElementById("btn-clear-creds").onclick = requestClearCredentials;
+
+	// Wire clear NVS
+	document.getElementById("btn-clear-nvs").onclick = requestClearNvs;
+
+	// Wire save provisioning
+	document.getElementById("btn-save").onclick = submitProvisioning;
+
+	fetchCredentials();     // existing
+	loadScanResults();      // moved from HTML into module
+
 });
 
 // Fetch /scan and populate UI
@@ -16,6 +65,7 @@ async function loadScanResults() {
     const res = await fetch('/framework/api/wifi/scan');
     const networks = await res.json();
 
+//	const networks = await api.scanWifi();
     window._scanResults = networks;
 
     const list = document.getElementById('network-list');
@@ -222,29 +272,6 @@ async function clearNvs() {
   }
 }
 
-let _confirmCallback = null;
-
-function showConfirm(type, title, message, onConfirm) {
-  const modal = document.getElementById('confirm-modal');
-  const titleEl = document.getElementById('confirm-modal-title');
-  const msgEl = document.getElementById('confirm-modal-message');
-
-  titleEl.textContent = title;
-  msgEl.textContent = message;
-
-  // Optional color coding
-  if (type === 'danger') {
-    titleEl.style.color = '#dc2626'; // red-600
-  } else if (type === 'warning') {
-    titleEl.style.color = '#d97706'; // amber-600
-  } else {
-    titleEl.style.color = '#111827'; // default
-  }
-
-  _confirmCallback = onConfirm;
-  modal.classList.remove('hidden');
-}
-
 async function confirmReboot() {
   try {
     const res = await fetch('/framework/api/device/reboot', { method: 'POST' });
@@ -265,51 +292,3 @@ async function confirmReboot() {
     showMessage('error', 'Reboot Failed', 'Unable to reboot device');
   }
 }
-
-function hideConfirmModal() {
-  document.getElementById('confirm-modal').classList.add('hidden');
-  _confirmCallback = null;
-}
-
-// Wire up the buttons once
-document.getElementById('confirm-cancel-btn').onclick = () => {
-  hideConfirmModal();
-};
-
-document.getElementById('confirm-ok-btn').onclick = () => {
-  if (_confirmCallback) _confirmCallback();
-  hideConfirmModal();
-};
-
-function showMessage(type, title, message) {
-  const modal = document.getElementById('message-modal');
-  const titleEl = document.getElementById('message-modal-title');
-  const msgEl = document.getElementById('message-modal-message');
-
-  // Set content
-  titleEl.textContent = title;
-  msgEl.textContent = message;
-
-  // Optional: color‑coding by type
-  if (type === 'error') {
-    titleEl.style.color = '#dc2626'; // red-600
-  } else if (type === 'success') {
-    titleEl.style.color = '#16a34a'; // green-600
-  } else if (type === 'warning') {
-    titleEl.style.color = '#d97706'; // amber-600
-  } else {
-    titleEl.style.color = '#111827'; // default gray-900
-  }
-
-  modal.classList.remove('hidden');
-}
-
-function hideMessageModal() {
-  document.getElementById('message-modal').classList.add('hidden');
-}
-
-
-document.getElementById('btn-clear-creds').onclick = requestClearCredentials;
-document.getElementById('btn-clear-nvs').onclick = requestClearNvs;
-
-window.addEventListener('load', fetchCredentials);

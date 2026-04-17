@@ -1,8 +1,8 @@
 #include "wifi_manager/WiFiInterface.hpp"
 
+#include "../device/include/device/EspTypeAdapter.hpp"
 #include "../wifi_types/include/wifi_types/WiFiTypes.hpp"
 #include "common/Result.hpp"
-#include "esp_adapter/EspTypeAdapter.hpp"
 #include "esp_event.h"
 #include "esp_event_base.h"
 #include "esp_wifi.h"

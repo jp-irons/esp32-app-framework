@@ -1,13 +1,13 @@
 #include "credential_store/CredentialStore.hpp"
 
 #include "common/Result.hpp"
-#include "esp_adapter/EspTypeAdapter.hpp"
 #include "esp_err.h"
 #include "logger/Logger.hpp"
 #include "nvs.h"
 
 #include <algorithm>
 #include <cstring>
+#include "../device/include/device/EspTypeAdapter.hpp"
 
 namespace credential_store {
 
