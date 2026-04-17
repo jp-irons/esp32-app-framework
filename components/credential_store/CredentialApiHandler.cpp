@@ -30,24 +30,24 @@ Result CredentialApiHandler::handle(http::HttpRequest &req, http::HttpResponse &
         // DELETE /credentials/{ssid}
         return handleDelete(action, res);
     }
-	
+
     log.debug("action '%s'", action.c_str());
     if (action == "list") {
-        log.debug("handleList");
         return handleList(res);
     }
     if (action == "submit") {
-        log.info("handleSubmit");
         return handleSubmit(req, res);
     }
     if (action == "clear") {
-        log.info("handleClear");
         return handleClear(res);
     }
     if (action == "clearNvs") {
-        log.info("handleClearNvs");
         return handleClearNvs(res);
     }
+    if (action == "makeFirst") {
+        return handleMakeFirst(req, res);
+    }
+
     log.error("handle action '%s' unsupported", action.c_str());
     return res.sendJsonError(403, "Unsupported");
 }
@@ -55,10 +55,20 @@ Result CredentialApiHandler::handle(http::HttpRequest &req, http::HttpResponse &
 std::string CredentialApiHandler::extractAction(const char *uri) {
     std::string path(uri);
     auto pos = path.find_last_of('/');
+
     if (pos == std::string::npos || pos == path.length() - 1) {
         return {}; // no action found
     }
-    return path.substr(pos + 1);
+
+    std::string action = path.substr(pos + 1);
+
+    // Strip query parameters (e.g. "?ts=12345")
+    auto qpos = action.find('?');
+    if (qpos != std::string::npos) {
+        action = action.substr(0, qpos);
+    }
+
+    return action;
 }
 
 Result CredentialApiHandler::handleList(HttpResponse &res) {
@@ -73,6 +83,7 @@ Result CredentialApiHandler::handleList(HttpResponse &res) {
     }
 
     for (const auto &c : entries) {
+		log.debug("List: ssid=%s priority=%d", c.ssid.c_str(), c.priority);
         cJSON *obj = cJSON_CreateObject();
         if (!obj) {
             cJSON_Delete(root);
@@ -95,9 +106,9 @@ Result CredentialApiHandler::handleList(HttpResponse &res) {
     if (!json_response) {
         return Result::InternalError;
     }
-    Result result = res.sendJson(json_response);
+    Result r = res.sendJson(json_response);
     cJSON_free(json_response);
-    return result;
+    return r;
 }
 
 Result CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &res) {
@@ -105,13 +116,13 @@ Result CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &
     std::string_view body = req.body();
 
     if (body.empty()) {
-		log.error("Empty body");
+        log.error("Empty body");
         return res.sendBadRequest400("Empty body");
     }
 
     cJSON *root = cJSON_Parse(body.data());
     if (!root) {
-		log.error("Invalid JSON");
+        log.error("Invalid JSON");
         return res.sendBadRequest400("Invalid JSON");
     }
 
@@ -119,7 +130,7 @@ Result CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &
     cJSON *ssid = cJSON_GetObjectItem(root, "ssid");
     if (!ssid || !cJSON_IsString(ssid)) {
         cJSON_Delete(root);
-		log.error("Missing ssid");
+        log.error("Missing ssid");
         return res.sendBadRequest400("Missing ssid");
     }
 
@@ -135,7 +146,7 @@ Result CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &
     entry.priority = (priority && cJSON_IsNumber(priority)) ? priority->valueint : 0;
 
     std::vector<WiFiCredential> entries;
-    store.loadAll(entries);
+    store.loadAllSortedByPriority(entries);
 
     bool replaced = false;
     for (auto &e : entries) {
@@ -153,33 +164,65 @@ Result CredentialApiHandler::handleSubmit(const HttpRequest &req, HttpResponse &
     cJSON_Delete(root);
 
     if (Result::Ok != r) {
-		log.error("Credential not saved");
+        log.error("Credential not saved");
         return res.sendInternalError500("Credential not saved");
     }
 
-    r = res.sendJson("{\"status\":\"ok\"}");
-    return r;
+    return res.sendJson("{\"status\":\"ok\"}");
 }
 
 Result CredentialApiHandler::handleDelete(std::string ssid, http::HttpResponse &res) {
     log.debug("delete ssid '%s'", ssid.c_str());
-	Result result = store.erase(ssid);
-	if (result != common::Result::Ok) {
+    Result result = store.erase(ssid);
+    if (result != common::Result::Ok) {
         return res.sendJsonError(404, std::string("error ") + common::toString(result) + " deleting " + ssid);
     }
-	return res.sendJson(ssid + " deleted");
+    return res.sendJson(ssid + " deleted");
 }
 
 Result CredentialApiHandler::handleClear(HttpResponse &res) {
     log.info("Clearing all credentials");
-    store.clear();
-    Result r = res.sendJsonOk("credentials cleared");
-    return r;
+    Result r = store.clear();
+    if (r != common::Result::Ok) {
+        return res.sendJsonError(404, std::string("error ") + common::toString(r) + " clearing ");
+    }
+    return res.sendJson("Credentials cleared");
 }
 
 Result CredentialApiHandler::handleClearNvs(HttpResponse &res) {
     res.sendJsonError(404, "not_implemented");
-	return res.sendJsonError(404, "not_implemented");
+    return res.sendJsonError(404, "not_implemented");
+}
+
+Result CredentialApiHandler::handleMakeFirst(const HttpRequest &req, HttpResponse &res) {
+    // Parse JSON body
+    cJSON* root = cJSON_Parse(req.body().data());
+    if (!root) {
+		log.error("Invalid JSON");
+        return res.sendJsonError(400, "Invalid JSON");
+    }
+
+    cJSON* ssidItem = cJSON_GetObjectItem(root, "ssid");
+    if (!ssidItem || !cJSON_IsString(ssidItem)) {
+        cJSON_Delete(root);
+		log.error("Missing ssid");
+        return res.sendJsonError(400, "Missing ssid");
+    }
+
+    std::string ssid = ssidItem->valuestring;
+
+    // Promote credential
+    Result r = store.makeFirst(ssid);
+    cJSON_Delete(root);
+
+    if (r != common::Result::Ok) {
+		log.error(("Error promoting " + ssid).c_str());
+        return res.sendJsonError(
+            404,
+            std::string("error ") + common::toString(r) + " promoting " + ssid
+        );
+    }
+    return res.sendJsonOk("Credential for " + ssid + " promoted");
 }
 
 } // namespace credential_store

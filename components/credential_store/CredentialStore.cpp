@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstring>
 #include "device/EspTypeAdapter.hpp"
+#include "wifi_types/WiFiTypes.hpp"
 
 namespace credential_store {
 
@@ -110,7 +111,7 @@ Result CredentialStore::loadAllSortedByPriority(std::vector<WiFiCredential> &out
         return res;
     }
 
-    std::sort(out.begin(), out.end(), [](auto &a, auto &b) { return a.priority > b.priority; });
+    std::sort(out.begin(), out.end(), [](auto &a, auto &b) { return a.priority < b.priority; });
 
     return Result::Ok;
 }
@@ -241,6 +242,34 @@ std::optional<WiFiCredential> CredentialStore::getByIndex(std::size_t index) con
     }
 
     return all[index];
+}
+
+Result  CredentialStore::makeFirst(const std::string& ssid) {
+	log.debug("makeFirst");
+    std::vector<WiFiCredential> entries;
+    loadAllSortedByPriority(entries);
+
+    auto it = std::find_if(entries.begin(), entries.end(),
+        [&](const WiFiCredential& e) { return e.ssid == ssid; });
+
+    if (it == entries.end()) {
+        log.error("makeFirst: SSID not found");
+        return Result::NotFound;
+    }
+	
+	log.debug(("makeFirst " + ssid).c_str());
+
+    WiFiCredential selected = *it;
+    entries.erase(it);
+    entries.insert(entries.begin(), selected);
+
+    // Reassign priorities
+    for (size_t i = 0; i < entries.size(); i++) {
+        entries[i].priority = i;
+    }
+
+    saveAll(entries);
+	return Result::Ok;
 }
 
 } // namespace credential_store

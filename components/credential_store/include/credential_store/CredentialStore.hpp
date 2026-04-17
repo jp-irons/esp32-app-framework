@@ -34,6 +34,8 @@ public:
     common::Result clear();
 	
 	std::optional<wifi_types::WiFiCredential> getByIndex(std::size_t index) const;
+	
+	common::Result makeFirst(const std::string& ssid);
 
 private:
     const char* ns;

@@ -64,6 +64,7 @@ class HttpResponse {
 
 	Result sendJson(std::string_view body) {
 	    httpd_resp_set_type(req, "application/json");
+		httpd_resp_set_hdr(req, "Cache-Control", "no-store");
 	    esp_err_t err = httpd_resp_send(req, body.data(), body.size());
 	    return device::toResult(err);
 	}

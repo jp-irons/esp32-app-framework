@@ -184,7 +184,8 @@ function startStatusPolling() {
 }
 
 async function fetchCredentials() {
-  const res = await fetch('/framework/api/credentials/list');
+  //const res = await fetch('/framework/api/credentials/list');
+  const res = await fetch(`/framework/api/credentials/list?ts=${Date.now()}`)
   const creds = await res.json();
   renderCredList(creds);
 }
@@ -203,14 +204,27 @@ function renderCredList(creds) {
 
     const name = document.createElement('span');
     name.textContent = c.ssid;
+	
+	// Right: button group
+	const btnGroup = document.createElement('div');
+	btnGroup.className = "flex gap-2";   // space between ^1st and Delete
 
-    const btn = document.createElement('button');
-    btn.textContent = 'Delete';
-    btn.className = "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700";
-    btn.onclick = () => requestDeleteCredential(c.ssid);
+	// ^1st button
+	const btnFirst = document.createElement("button");
+	btnFirst.textContent = "^1st";
+	btnFirst.className = "px-2 py-1 bg-gray-300 rounded hover:bg-gray-400";
+	btnFirst.onclick = () => makeFirst(c.ssid);
 
+	// Delete button (furthest right)
+	const btnDelete = document.createElement('button');
+	btnDelete.textContent = 'Delete';
+	btnDelete.className = "px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700";
+	btnDelete.onclick = () => requestDeleteCredential(c.ssid);
+	
     li.appendChild(name);
-    li.appendChild(btn);
+	btnGroup.appendChild(btnFirst);
+	btnGroup.appendChild(btnDelete);
+	li.appendChild(btnGroup);
     ul.appendChild(li);
   });
 }
@@ -222,6 +236,16 @@ function requestDeleteCredential(ssid) {
     `Do you want to delete "${ssid}"?`,
     () => deleteCredential(ssid)
   );
+}
+
+async function makeFirst(ssid) {
+  await fetch("/framework/api/credentials/makeFirst", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ssid })
+  });
+
+  await fetchCredentials();  // refresh UI
 }
 
 async function deleteCredential(ssid) {
