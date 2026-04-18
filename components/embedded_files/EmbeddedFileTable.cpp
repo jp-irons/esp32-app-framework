@@ -23,6 +23,9 @@ extern const uint8_t _binary_provision_index_html_end[] asm("_binary_provision_i
 extern const uint8_t _binary_provision_app_js_start[] asm("_binary_provision_app_js_start");
 extern const uint8_t _binary_provision_app_js_end[] asm("_binary_provision_app_js_end");
 
+extern const uint8_t _binary_provision_ui_js_start[] asm("_binary_provision_ui_js_start");
+extern const uint8_t _binary_provision_ui_js_end[] asm("_binary_provision_ui_js_end");
+
 // Runtime UI
 extern const uint8_t _binary_runtime_index_html_start[] asm("_binary_runtime_index_html_start");
 extern const uint8_t _binary_runtime_index_html_end[] asm("_binary_runtime_index_html_end");
@@ -60,8 +63,9 @@ static const FileEntry files[] = {
     {"/favicon.ico", _binary__favicon_ico_start, _binary__favicon_ico_end},
 
     // Provisioning UI
-    {"/provision/index.html", _binary_provision_index_html_start, _binary_provision_index_html_end},
     {"/provision/app.js", _binary_provision_app_js_start, _binary_provision_app_js_end},
+	{"/provision/ui.js", _binary_provision_ui_js_start, _binary_provision_ui_js_end},
+    {"/provision/index.html", _binary_provision_index_html_start, _binary_provision_index_html_end},
 
     // Runtime UI
     {"/runtime/index.html", _binary_runtime_index_html_start, _binary_runtime_index_html_end},

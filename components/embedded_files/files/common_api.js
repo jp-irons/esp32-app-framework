@@ -1,27 +1,15 @@
-// TODO entries created in skeleton - suspect these are duplicates
-export async function sendCredentials(ssid, password) {
-  return fetch('/api/provision', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ssid, password })
-  });
-}
+//
+// common/api.js
+//
 
-export async function fetchStatus() {
-  const res = await fetch('/api/status');
-  return res.json();
-}
+// ---------- Generic helpers ----------
 
-// common_api.js
-
-// Generic GET helper
 async function get(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`GET ${url} failed`);
     return res.json();
 }
 
-// Generic POST helper
 async function post(url, body = null) {
     const res = await fetch(url, {
         method: "POST",
@@ -29,35 +17,42 @@ async function post(url, body = null) {
         body: body ? JSON.stringify(body) : null
     });
     if (!res.ok) throw new Error(`POST ${url} failed`);
-    return res.json().catch(() => ({})); // allow empty JSON
+    return res.json().catch(() => ({}));   // allow empty JSON
 }
 
-// Generic DELETE helper
 async function del(url) {
     const res = await fetch(url, { method: "DELETE" });
     if (!res.ok) throw new Error(`DELETE ${url} failed`);
     return res.json().catch(() => ({}));
 }
 
-// ---- Specific API wrappers ----
 
-// WiFi scan
+// ---------- WiFi Scan ----------
+
 export function scanWifi() {
-    return get("/framework/api/wifi/scan");
+    return get(`/framework/api/wifi/scan?ts=${Date.now()}`);
 }
 
-// WiFi status
+
+// ---------- WiFi Status ----------
+
 export function wifiStatus() {
-    return get("/framework/api/wifi/status");
+    return get(`/framework/api/wifi/status?ts=${Date.now()}`);
 }
 
-// Credentials
+
+// ---------- Credentials ----------
+
 export function listCredentials() {
-    return get("/framework/api/credentials/list");
+    return get(`/framework/api/credentials/list?ts=${Date.now()}`);
 }
 
 export function submitCredential(payload) {
     return post("/framework/api/credentials/submit", payload);
+}
+
+export function makeFirst(ssid) {
+    return post("/framework/api/credentials/makeFirst", { ssid });
 }
 
 export function deleteCredential(ssid) {
@@ -72,7 +67,9 @@ export function clearNvs() {
     return post("/framework/api/credentials/clearNvs");
 }
 
-// Device
+
+// ---------- Device ----------
+
 export function rebootDevice() {
     return post("/framework/api/device/reboot");
 }

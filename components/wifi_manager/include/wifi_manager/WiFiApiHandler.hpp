@@ -22,10 +22,10 @@ class WiFiApiHandler : public http::HttpHandler {
 
   private:
     wifi_manager::WiFiContext &wifiCtx;
-    common::Result handleScan(http::HttpResponse &res);
-    common::Result handleStatus(http::HttpResponse &res);
-    common::Result handleConnect(const http::HttpRequest &req, http::HttpResponse &res);
-    common::Result handleDisconnect(http::HttpResponse &res);
+    common::Result handleScan(http::HttpRequest &req, http::HttpResponse &res);
+    common::Result handleStatus(http::HttpRequest &req, http::HttpResponse &res);
+    common::Result handleConnect(http::HttpRequest &req, http::HttpResponse &res);
+    common::Result handleDisconnect(http::HttpRequest &req, http::HttpResponse &res);
 
 };
 

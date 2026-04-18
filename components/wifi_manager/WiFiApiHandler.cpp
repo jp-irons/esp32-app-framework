@@ -7,6 +7,7 @@
 #include "logger/Logger.hpp"
 #include "wifi_manager/WiFiContext.hpp"
 #include "wifi_manager/WiFiInterface.hpp"
+#include "wifi_manager/WiFiStateMachine.hpp"
 
 #include <vector>
 
@@ -14,6 +15,7 @@ namespace wifi_manager {
 
 using namespace http;
 using namespace wifi_types;
+using namespace common;
 
 static logger::Logger log{"WiFiApiHandler"};
 
@@ -23,19 +25,16 @@ WiFiApiHandler::WiFiApiHandler(WiFiContext &w)
 }
 
 // handle events
-common::Result WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse &res) {
-    log.debug("handle");
+Result WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse &res) {
     const std::string &path = req.path();
     std::string action = extractAction(req.path());
-    log.debug("action '%s'", action.c_str());
+    log.debug("handle action '%s'", action.c_str());
 
     if (action == "scan") {
-        log.debug("action scan matched");
-        return handleScan(res);
+        return handleScan(req, res);
     }
     if (action == "status") {
-        log.debug("action scan matched");
-        return handleStatus(res);
+        return handleStatus(req, res);
     }
     //    if (path == "/api/wifi/connect") {
     //        handleConnect(req, res);
@@ -46,7 +45,7 @@ common::Result WiFiApiHandler::handle(http::HttpRequest &req, http::HttpResponse
     //        return true;
     //    }
     //
-    return common::Result::NotFound;
+    return Result::NotFound;
 }
 
 static void formatBssid(const uint8_t bssid[6], char out[18]) {
@@ -54,13 +53,13 @@ static void formatBssid(const uint8_t bssid[6], char out[18]) {
     snprintf(out, 18, "%02X:%02X:%02X:%02X:%02X:%02X", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
 }
 
-common::Result WiFiApiHandler::handleScan(HttpResponse &res) {
+Result WiFiApiHandler::handleScan(HttpRequest &req, HttpResponse &res) {
     log.debug("handleScan");
     std::vector<WiFiAp> aps;
-    common::Result r = wifiCtx.wifiInterface->scan(aps);
+    Result r = wifiCtx.wifiInterface->scan(aps);
     log.debug("scan result");
 
-    if (r == common::Result::Ok) {
+    if (r == Result::Ok) {
         log.debug("result Ok");
         uint16_t count = aps.size();
         cJSON *root = cJSON_CreateArray();
@@ -86,19 +85,48 @@ common::Result WiFiApiHandler::handleScan(HttpResponse &res) {
     return r;
 }
 
-common::Result WiFiApiHandler::handleStatus(HttpResponse &res) {
-	log.debug("handleStatus");
-	static const char* msg =
-	    "{\"state\":\"UNKNOWN\",\"connected\":false,\"ssid\":\"\",\"lastErrorReason\":0}";
-	return res.sendJson(msg);
+Result WiFiApiHandler::handleStatus(HttpRequest &req, HttpResponse &res) {
+    log.debug("handleStatus");
+
+    // TODO    if (req.method != HttpMethod::GET) {
+    //	        return res.sendError(HttpStatus::METHOD_NOT_ALLOWED);
+    //	    }
+    //
+    wifi_types::WiFiStaStatus st = wifiCtx.stateMachine->getStaStatus();
+
+    // Create root JSON object
+    cJSON *root = cJSON_CreateObject();
+    if (!root) {
+        return res.sendJsonError(500, "Internal Error");
+    }
+
+    // Add fields
+    cJSON_AddStringToObject(root, "state", st.state.c_str());
+    cJSON_AddStringToObject(root, "ssid", st.ssid.c_str());
+    cJSON_AddStringToObject(root, "lastErrorReason", st.lastErrorReason.c_str());
+    cJSON_AddBoolToObject(root, "connected", st.connected);
+
+    // Serialize
+    char *jsonStr = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+
+    if (!jsonStr) {
+		return res.sendJsonError(500, "Internal Error");
+   }
+
+    // Send response
+    Result r = res.sendJson(jsonStr);
+    free(jsonStr); // cJSON allocates with malloc()
+
+    return r;
 }
 
-common::Result WiFiApiHandler::handleConnect(const HttpRequest &req, HttpResponse &res) {
+Result WiFiApiHandler::handleConnect(HttpRequest &req, HttpResponse &res) {
     res.sendJsonStatus("not_implemented");
     return common::Result::Unsupported;
 }
 
-common::Result WiFiApiHandler::handleDisconnect(HttpResponse &res) {
+common::Result WiFiApiHandler::handleDisconnect(HttpRequest &req, HttpResponse &res) {
     res.sendJsonStatus("not_implemented");
     return common::Result::Unsupported;
 }

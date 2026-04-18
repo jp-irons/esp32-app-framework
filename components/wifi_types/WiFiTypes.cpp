@@ -5,42 +5,42 @@ namespace wifi_types {
 const char *toString(WiFiState state) {
     switch (state) {
         case WiFiState::UNINITIALISED:
-            return "UNINITIALISED";
+            return "Un-initialised";
         case WiFiState::STARTING:
-            return "STARTING";
+            return "Starting";
 
         // Provisioning path
         case WiFiState::UNPROVISIONED_AP:
-            return "UNPROVISIONED_AP";
+            return "Unprovisioned AP";
 
         case WiFiState::PROVISIONING:
-            return "PROVISIONING";
+            return "Provisioning";
         case WiFiState::PROVISIONING_TEST_STA:
-            return "ROVISIONING_TEST_STA";
+            return "Provisioning Test STA";
 
         // Runtime path
         case WiFiState::STA_CONNECTING:
-            return "STA_CONNECTING";
+            return "STA Connecting";
         case WiFiState::STA_CONNECTED:
-            return "STA_CONNECTED";
+            return "STA Connected";
         case WiFiState::GOT_IP:
-            return "GOT_IP";
+            return "Got IP";
 
         // Error / fallback
         case WiFiState::STA_DISCONNECTED:
-            return "STA_DISCONNECTE";
+            return "STA Disconnected";
         case WiFiState::STA_CONNECT_FAILED:
-            return "STA_CONNECT_FAILED";
+            return "STA Connect Failed";
         case WiFiState::FALLBACK_AP:
-            return "FALLBACK_AP";
+            return "Fall back AP";
 
         // Terminal / maintenance
         case WiFiState::STOPPING:
-            return "STOPPING";
+            return "Stopping";
         case WiFiState::STOPPED:
-            return "STOPPED";
+            return "Stopped";
     }
-    return "UNKNOWN";
+    return "Unknown";
 }
 
 const char *toString(WiFiAuthMode auth) {

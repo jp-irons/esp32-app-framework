@@ -14,17 +14,21 @@ public:
 	
 	static std::string extractAction(const char *uri) {
 	    std::string path(uri);
-		return extractAction(&path);
-	}
+	    auto pos = path.find_last_of('/');
 
-static std::string extractAction(std::string *path) {
-    auto pos = path->find_last_of('/');
-    if (pos == std::string::npos || pos == path->length() - 1) {
-        return {}; // no action found
-    }
-    return path->substr(pos + 1);
-}
+	    if (pos == std::string::npos || pos == path.length() - 1) {
+	        return {}; // no action found
+	    }
 
-};
+	    std::string action = path.substr(pos + 1);
+
+	    // Strip query parameters
+	    auto qpos = action.find('?');
+	    if (qpos != std::string::npos) {
+	        action = action.substr(0, qpos);
+	    }
+
+	    return action;
+	}};
 
 } // namespace http

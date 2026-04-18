@@ -176,6 +176,19 @@ WiFiState WiFiStateMachine::getState() const {
     return currentState;
 }
 
+wifi_types::WiFiStaStatus WiFiStateMachine::getStaStatus() const {
+    wifi_types::WiFiStaStatus s;
+
+    s.state = wifi_types::toString(currentState);
+    s.ssid = "Unknown";
+	// TODO sort out lastError
+//	s.ssid = getCurrentSSID();
+//    s.lastErrorReason = wifi_types::toString(lastError);
+    s.connected = (currentState == wifi_types::WiFiState::GOT_IP);
+
+    return s;
+}
+
 size_t WiFiStateMachine::getCredentialIndex() const {
     return static_cast<size_t>(currentCredentialIndex);
 }

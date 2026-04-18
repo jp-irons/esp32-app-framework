@@ -47,6 +47,7 @@ class WiFiStateMachine {
     void reset();
 
 	wifi_types::WiFiState getState() const;
+	wifi_types::WiFiStaStatus getStaStatus() const;
 	size_t getCredentialIndex() const;
 	std::string getCurrentSSID() const;
 	

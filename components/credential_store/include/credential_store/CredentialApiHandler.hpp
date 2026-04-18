@@ -24,8 +24,6 @@ class CredentialApiHandler : public http::HttpHandler {
     common::Result handleDelete(std::string ssid, http::HttpResponse &res);
     common::Result handleMakeFirst(const http::HttpRequest &req, http::HttpResponse &res);
 
-    std::string extractAction(const char *uri);
-
     credential_store::CredentialStore &store;
 };
 

@@ -1,4 +1,4 @@
-file(GLOB_RECURSE EMBED_FILES "assets/*")
+file(GLOB_RECURSE EMBED_FILES "files/*")
 #touch
 idf_component_register(
     SRCS

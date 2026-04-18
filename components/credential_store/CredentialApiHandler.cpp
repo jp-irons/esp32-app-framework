@@ -52,25 +52,6 @@ Result CredentialApiHandler::handle(http::HttpRequest &req, http::HttpResponse &
     return res.sendJsonError(403, "Unsupported");
 }
 
-std::string CredentialApiHandler::extractAction(const char *uri) {
-    std::string path(uri);
-    auto pos = path.find_last_of('/');
-
-    if (pos == std::string::npos || pos == path.length() - 1) {
-        return {}; // no action found
-    }
-
-    std::string action = path.substr(pos + 1);
-
-    // Strip query parameters (e.g. "?ts=12345")
-    auto qpos = action.find('?');
-    if (qpos != std::string::npos) {
-        action = action.substr(0, qpos);
-    }
-
-    return action;
-}
-
 Result CredentialApiHandler::handleList(HttpResponse &res) {
     std::vector<WiFiCredential> entries;
 

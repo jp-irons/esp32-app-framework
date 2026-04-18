@@ -82,6 +82,13 @@ enum class WiFiStatus {
     ConnectError
 };
 
+struct WiFiStaStatus {
+    std::string state;            // stringified WiFiState
+    std::string ssid;             // current or last attempted SSID
+    std::string lastErrorReason;  // stringified WiFiError
+    bool connected = false;       // true if STA is connected
+};
+
 struct IpAddress {
     std::string value;   // "192.168.4.1"
     bool valid = false;
