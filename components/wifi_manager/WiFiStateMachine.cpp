@@ -237,18 +237,38 @@ void WiFiStateMachine::enterState(WiFiState newState) {
 }
 
 void WiFiStateMachine::tryNextCredential() {
-	if (retryCount < MAX_RETRIES) {
-	    retryCount++;
-	    log.warn("Retry %d/%d connecting to STA", retryCount, MAX_RETRIES);
+    if (retryCount < MAX_RETRIES) {
+        retryCount++;
+        log.warn("Retry %d/%d for credential %d",
+                 retryCount, MAX_RETRIES, currentCredentialIndex);
 
-	    defer.runAfter(500, [this]() {
-	        transitionTo(WiFiState::STA_CONNECTING);
-	    });
-	} else {
-	    log.error("Max STA retries reached — falling back to AP");
-	    retryCount = 0;
-	    transitionTo(WiFiState::FALLBACK_AP);
-	}}
+        defer.runAfter(500, [this]() {
+            transitionTo(WiFiState::STA_CONNECTING);
+        });
+        return;
+    }
+
+    // Retries exhausted for this credential
+    log.warn("Credential %d failed after %d retries",
+             currentCredentialIndex, MAX_RETRIES);
+
+    retryCount = 0;
+    currentCredentialIndex++;
+
+    const int total = ctx.credentialStore->count();
+
+    if (currentCredentialIndex < total) {
+        log.warn("Trying next credential %d", currentCredentialIndex);
+
+        defer.runAfter(200, [this]() {
+            transitionTo(WiFiState::STA_CONNECTING);
+        });
+    } else {
+        log.error("All credentials failed — falling back to AP");
+        currentCredentialIndex = 0;  // reset for next cycle
+        transitionTo(WiFiState::FALLBACK_AP);
+    }
+}
 
 void WiFiStateMachine::startProvisioningAp() {
     log.debug("startProvisioningAp");
@@ -275,8 +295,7 @@ void WiFiStateMachine::startRuntimeSta() {
     ctx.provisioningServer->stop();
     ctx.wifiInterface->stopAp();
 
-    // 2. Select the first (or preferred) credential
-    currentCredentialIndex = 0;
+    // 2. Select the current credential
     auto creds = ctx.credentialStore->getByIndex(currentCredentialIndex);
     if (!creds) {
         error = WiFiError::INVALID_CREDENTIALS;
