@@ -16,8 +16,10 @@ public:
     common::Result handle(http::HttpRequest& req, http::HttpResponse& res) override;
 
 private:
+	common::Result handleGet(http::HttpRequest& req, http::HttpResponse& res);
+	common::Result handlePost(http::HttpRequest& req, http::HttpResponse& res);
 	common::Result handleClearNvs(http::HttpRequest& req, http::HttpResponse& res);
-    common::Result handleReboot(http::HttpRequest& req, http::HttpResponse& res);
+	common::Result handleReboot(http::HttpRequest& req, http::HttpResponse& res);
 	DeviceService deviceService;
 	
 };
