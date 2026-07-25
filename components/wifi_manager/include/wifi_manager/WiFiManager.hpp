@@ -30,10 +30,12 @@ class WiFiManager {
      *               real WIFI_EVENT_STA_DISCONNECTED). Defaults to
      *               WiFiError::UNKNOWN for callers that don't have a
      *               specific reason (IP_EVENT_STA_LOST_IP, onConnectTimeout(),
-     *               forceReconnect()) — those keep today's immediate-retry
-     *               behavior. Only WiFiError::HANDSHAKE_TIMEOUT currently
-     *               changes behavior — see the backoff note on
-     *               retryDelayMsFor() below.
+     *               forceReconnect()). The reason only affects backoff
+     *               timing between same-network retries (see
+     *               retryDelayMsFor()) — the very first reconnect attempt
+     *               against whatever's currently being tried gets an
+     *               immediate soft WiFi driver reset regardless of reason;
+     *               see driverResetCycleCount's doc comment for why.
      */
     void onDisconnect(WiFiError reason = WiFiError::UNKNOWN);
     void onFatalError();
@@ -65,22 +67,37 @@ class WiFiManager {
 	int retryCount = 0;
     static constexpr int MAX_RETRIES = 3;
 
-    // Soft driver-reset escalation: once every network in the list has
-    // exhausted its own MAX_RETRIES cycle, do a full WiFiInterface
-    // stopDriver()/startDriver() (fresh esp_wifi_init(), fresh netifs) and
-    // retry from network 0, before falling back to AP_Mode. Field evidence
-    // 2026-07-21 (node170, see project memory
-    // project_bird_wifi_reliability_investigation): a full esp_restart()
-    // reliably connects on its very first attempt after this exact retry
-    // loop fails continuously for 20+ minutes, strongly suggesting a fresh
-    // driver init clears some stuck internal state that plain
-    // disconnect()/stop()/start() (already done on every retry via
-    // connectSta()) never touches. This tries for the same effect without
-    // the cost of a full chip reboot — GPS lock, ESP-NOW state, and the
-    // audio ring buffer all survive a driver-only reset. Capped rather than
-    // unconditional so a genuinely dead/absent AP still eventually reaches
-    // AP_Mode and the existing HubHeartbeat esp_restart() safety net,
-    // rather than looping on driver resets forever.
+    // Soft driver-reset escalation: do a full WiFiInterface
+    // stopDriver()/startDriver() (fresh esp_wifi_init(), fresh netifs, but
+    // netifs/event-handler registrations are preserved across the cycle —
+    // see EspWiFiInterface's own comments, fixed 2026-07-22 after a
+    // coredump-confirmed use-after-free) before falling back to AP_Mode.
+    // Field evidence 2026-07-21 (node170): a full esp_restart() reliably
+    // connects on its very first attempt after the plain retry loop fails
+    // continuously for 20+ minutes, strongly suggesting a fresh driver init
+    // clears some stuck internal state that plain disconnect()/stop()/
+    // start() (already done on every retry via connectSta()) never
+    // touches. This tries for the same effect without the cost of a full
+    // chip reboot — GPS lock, ESP-NOW state, and the audio ring buffer all
+    // survive a driver-only reset.
+    //
+    // UPDATE 2026-07-22: originally this only fired once every network in
+    // the list had exhausted its own MAX_RETRIES cycle (i.e. only as a
+    // last resort). Now shared across two firing points against the same
+    // capped budget: onDisconnect() spends the first cycle immediately, on
+    // the very first sign of trouble for whatever's currently being
+    // attempted — field evidence (node174, node171, same date) is that a
+    // warm retry against an already-wedged driver has never once succeeded
+    // for a genuine reason=15 handshake-timeout failure, so waiting for 3
+    // guaranteed-failing retries first was pure latency, not caution that
+    // was ever paying off. continueRetrySequence() still spends the second
+    // (and final) cycle the old way, once a full 3-retry backoff ladder
+    // against the freshly-reset driver has also failed. See project memory,
+    // project_bird_wifi_reliability_investigation, for the full history.
+    // Capped rather than unconditional so a genuinely dead/absent AP still
+    // eventually reaches AP_Mode and the existing HubHeartbeat
+    // esp_restart() safety net, rather than looping on driver resets
+    // forever.
     int driverResetCycleCount = 0;
     static constexpr int MAX_DRIVER_RESET_CYCLES = 2;
 
@@ -96,6 +113,12 @@ class WiFiManager {
     static constexpr uint32_t STA_CONNECT_TIMEOUT_MS = 20000;
     uint32_t connectAttemptId = 0;
     void onConnectTimeout(uint32_t attemptId);
+
+    // Retry/next-network/exhausted branching, factored out of onDisconnect()
+    // so it's reachable both from a normal disconnect and as the
+    // continuation after onDisconnect()'s own immediate pre-retry driver
+    // reset (see driverResetCycleCount's doc comment above).
+    void continueRetrySequence(WiFiError reason);
 
     // Load networks only at boot
     void loadInitialNetwork();

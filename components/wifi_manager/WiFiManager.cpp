@@ -137,6 +137,67 @@ void WiFiManager::onDisconnect(WiFiError reason) {
     // 2026-06-30 investigating node 170's overnight drop.
     sm.markState(WiFiState::STA_Connecting);
 
+    // Give the very first reconnect attempt against whatever we're about to
+    // try (a fresh disconnect, or the first attempt against a newly-selected
+    // network) the best possible shot: soft-reset the WiFi driver before
+    // even the first same-network retry, rather than waiting for MAX_RETRIES
+    // warm-driver attempts to fail first. Field evidence 2026-07-22
+    // (node174, node171 — see project memory,
+    // project_bird_wifi_reliability_investigation) shows the very first
+    // connection attempt after a driver reset has succeeded every single
+    // time observed so far, while a warm retry against an already-wedged
+    // driver has never once succeeded for a genuine reason=15
+    // handshake-timeout failure. Applied regardless of disconnect reason —
+    // we have no evidence any particular reason is safe to skip this for,
+    // and the reset itself is cheap (~400ms measured in the field; the
+    // ESP-NOW/audio-push interruption it causes is no different from what
+    // connectSta()'s existing disconnect/stop/start already causes on every
+    // plain retry). retryCount==0 identifies "first sign of trouble" for
+    // whatever we're currently attempting. Still capped by
+    // MAX_DRIVER_RESET_CYCLES — the same shared budget as the
+    // post-exhaustion reset in continueRetrySequence() below — so this
+    // doesn't raise the total number of resets attempted before falling
+    // through to AP_Mode, it just moves the first one earlier.
+    if (retryCount == 0 && driverResetCycleCount < MAX_DRIVER_RESET_CYCLES) {
+        driverResetCycleCount++;
+        log.warn("Disconnected (reason=%s) — soft-resetting WiFi driver (cycle %d/%d) before first retry",
+                  toString(reason), driverResetCycleCount, MAX_DRIVER_RESET_CYCLES);
+
+        // Deferred via the timer task rather than run inline: this method
+        // executes on the WiFi event-loop task, and stopDriver()/startDriver()
+        // tear down and rebuild driver state that same task's own event
+        // dispatch depends on. Running it one tick later on EspTimerInterface's
+        // dedicated ESP_TIMER_TASK avoids doing that disruptive work from
+        // inside the event callback's own call stack.
+        ctx.timer->runAfter(0, [this]() {
+            ctx.wifiInterface->stopDriver();
+            Result r = ctx.wifiInterface->startDriver();
+            if (r != Result::Ok) {
+                // The driver itself won't come back up — that's DriverFailed's
+                // territory (retryDriver()'s own separate retry loop), not
+                // something retried here can fix.
+                log.error("Driver reset failed to restart — escalating to DriverFailed");
+                onFatalError();
+                return;
+            }
+
+            // Counts as attempt 1/MAX_RETRIES: go immediately, no artificial
+            // backoff — it just got a clean driver, and field evidence is
+            // that this first attempt succeeds. If it still fails, the
+            // resulting onDisconnect() call has retryCount==1 already, so it
+            // lands in continueRetrySequence()'s normal backoff ladder for
+            // attempts 2 and 3 rather than triggering another immediate
+            // reset.
+            retryCount = 1;
+            startSTA();
+        });
+        return;
+    }
+
+    continueRetrySequence(reason);
+}
+
+void WiFiManager::continueRetrySequence(WiFiError reason) {
     // Retry the same network first
     if (retryCount < MAX_RETRIES) {
         retryCount++;
@@ -167,26 +228,21 @@ void WiFiManager::onDisconnect(WiFiError reason) {
     }
 
     // All networks in the list have now each failed their full 3-retry
-    // backoff cycle. Before falling back to AP_Mode (whose provisioning UI
-    // is currently unreachable anyway — see project_bird_panic_apmode_softap_order
-    // in project memory, a separate still-open bug) or waiting on
-    // HubHeartbeat's much slower checkSelfHeal()/esp_restart() escalation
-    // (10+ minutes per cycle), try a soft WiFi driver reset: a full
-    // stop/deinit + fresh init, not just the disconnect/stop/start
-    // connectSta() already does on every single retry. See
-    // driverResetCycleCount's doc comment in the header for the field
-    // evidence motivating this.
+    // backoff cycle (on top of the immediate pre-retry reset in
+    // onDisconnect() above already having been spent, if this is the first
+    // time through this outage). Before falling back to AP_Mode (whose
+    // provisioning UI is currently unreachable anyway — see
+    // project_bird_panic_apmode_softap_order in project memory, a separate
+    // still-open bug, deliberately parked) or waiting on HubHeartbeat's much
+    // slower checkSelfHeal()/esp_restart() escalation (10+ minutes per
+    // cycle), try another soft WiFi driver reset if the shared budget still
+    // allows it. See driverResetCycleCount's doc comment in the header for
+    // the field evidence motivating this.
     if (driverResetCycleCount < MAX_DRIVER_RESET_CYCLES) {
         driverResetCycleCount++;
         log.warn("All networks failed — soft-resetting WiFi driver (cycle %d/%d) before retrying",
                   driverResetCycleCount, MAX_DRIVER_RESET_CYCLES);
 
-        // Deferred via the timer task rather than run inline: this method
-        // executes on the WiFi event-loop task, and stopDriver()/startDriver()
-        // tear down and rebuild driver state that same task's own event
-        // dispatch depends on. Running it one tick later on EspTimerInterface's
-        // dedicated ESP_TIMER_TASK avoids doing that disruptive work from
-        // inside the event callback's own call stack.
         ctx.timer->runAfter(0, [this]() {
             ctx.wifiInterface->stopDriver();
             Result r = ctx.wifiInterface->startDriver();
